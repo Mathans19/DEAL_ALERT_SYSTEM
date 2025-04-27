@@ -24,17 +24,19 @@ jobs:
     - name: Install system dependencies
       run: |
         sudo apt-get update
-        sudo apt-get install -y python3-pip python3-dev wget unzip
+        sudo apt-get install -y python3-pip python3-dev wget unzip curl
         pip install --upgrade pip
         pip install -r requirements.txt
 
-    - name: Set up Chrome
+    - name: Set up Google Chrome and ChromeDriver
       run: |
         # Install Google Chrome
         sudo apt install -y google-chrome-stable
-        # Install ChromeDriver
+        # Get the Chrome version
         CHROME_VERSION=$(google-chrome --version | awk '{print $3}')
-        wget https://chromedriver.storage.googleapis.com/$(curl -sS chromedriver.storage.googleapis.com/LATEST_RELEASE_$CHROME_VERSION)/chromedriver_linux64.zip
+        # Download the corresponding ChromeDriver version
+        DRIVER_VERSION=$(curl -sS chromedriver.storage.googleapis.com/LATEST_RELEASE_$CHROME_VERSION)
+        wget https://chromedriver.storage.googleapis.com/$DRIVER_VERSION/chromedriver_linux64.zip
         unzip chromedriver_linux64.zip
         sudo mv chromedriver /usr/local/bin/
         sudo chmod +x /usr/local/bin/chromedriver
