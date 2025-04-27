@@ -1,0 +1,30 @@
+name: Automate Scraping Task
+
+on:
+  schedule:
+    # This cron job will trigger the task every hour
+    - cron: '0 * * * *'  # Run at the start of every hour
+  push:
+    branches:
+      - main  # Runs on push to the 'main' branch
+
+jobs:
+  scrape:
+    runs-on: ubuntu-latest  # Use an Ubuntu runner
+
+    steps:
+    - name: Checkout repository
+      uses: actions/checkout@v3
+
+    - name: Set up Python
+      uses: actions/setup-python@v4
+      with:
+        python-version: '3.9'  # Specify the Python version you're using
+
+    - name: Install dependencies
+      run: |
+        pip install -r requirements.txt  # Make sure your requirements.txt includes necessary dependencies like selenium, pushbullet, etc.
+
+    - name: Run Scraping Task
+      run: |
+        python track_prices.py  # This is the file where your scraping logic is defined
