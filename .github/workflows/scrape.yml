@@ -10,7 +10,7 @@ on:
 
 jobs:
   scrape:
-    runs-on: ubuntu-latest   # You can try using ubuntu-latest instead if you want
+    runs-on: ubuntu-latest  # Use Ubuntu runner
 
     steps:
     - name: Checkout repository
@@ -19,19 +19,14 @@ jobs:
     - name: Set up Python
       uses: actions/setup-python@v4
       with:
-        python-version: '3.10'  # Use a newer or different Python version
+        python-version: '3.9'
 
     - name: Install system dependencies
       run: |
-        choco install python3
-        python -m pip install --upgrade pip
+        sudo apt-get update
+        sudo apt-get install -y python3-pip python3-dev
+        pip install --upgrade pip
         pip install -r requirements.txt
-
-    - name: Set CYGWIN to increase buffer size
-      run: |
-        set CYGWIN=buffer_size=100
-        echo "Running track_prices.py script..."
-        python track_prices.py
 
     - name: Set up Chrome and ChromeDriver
       uses: browser-actions/setup-chrome@v1
@@ -53,4 +48,4 @@ jobs:
         CI: true
       run: |
         echo "Running track_prices.py script..."
-        python track_prices.py
+        python track_prices.py  # Run the script without debugging
