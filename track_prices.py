@@ -200,26 +200,7 @@ def scrape_flipkart_product(product_url):
     
     return product_name, price
 
-# Function to get product info from both sites
-# def get_product_info():
-#     amazon_url = "https://www.amazon.in/dp/B0DM28ZYKN/"
-#     flipkart_url = "https://www.flipkart.com/conscious-chemist-sunscreen-spf-50-pa-niacinamide-blueberry-water-resistant-no-white-cast/p/itmfd5749fa16dfb"
-
-#     sys.stdout = original_stdout  # Restore stdout
-    
-#     amazon_name, amazon_price = scrape_amazon_product(amazon_url)
-#     flipkart_name, flipkart_price = scrape_flipkart_product(flipkart_url)
-
-#     print("\n===== Amazon Product =====")
-#     print(f"Product: {amazon_name if amazon_name else 'Name not found'}")
-#     print(f"Price: {amazon_price if amazon_price else 'Price not found'}")
-    
-#     print("\n===== Flipkart Product =====")
-#     print(f"Product: {flipkart_name if flipkart_name else 'Name not found'}")
-#     print(f"Price: {flipkart_price if flipkart_price else 'Price not found'}")
-
-# # --- Save scraped data to Django DB ---
-
+# --- Save scraped data to Django DB ---
 def save_to_db():
     import django
     os.environ.setdefault('DJANGO_SETTINGS_MODULE', 'price_tracking_project.settings')
