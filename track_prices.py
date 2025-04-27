@@ -31,51 +31,25 @@ sys.stdout = open(os.devnull, 'w')
 
 
 def setup_driver():
+    # Create a temporary directory for user data
+    user_data_dir = tempfile.mkdtemp()
+    
     options = Options()
-    options.headless = True
-    options.add_argument("--ignore-certificate-errors")
-    options.add_argument("--disable-gpu")
+    options.add_argument("--headless")  # Run Chrome in headless mode
     options.add_argument("--no-sandbox")
     options.add_argument("--disable-dev-shm-usage")
-    options.add_argument("--window-size=1920,1080")
+    options.add_argument(f"--user-data-dir={user_data_dir}")  # Unique user data directory
     
-    # Add user agent
-    options.add_argument("user-agent=Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/135.0.0.0 Safari/537.36")
+    # Set up the ChromeDriver service
+    service = Service("/path/to/chromedriver")  # Ensure chromedriver is correctly set up
     
-    # Create a unique temporary directory for user data
-    temp_dir = tempfile.mkdtemp()
-    options.add_argument(f"--user-data-dir={temp_dir}")
-    
-    # Important: Forces Chrome to run without any user data
-    options.add_argument("--incognito")
-    options.add_argument("--disable-extensions")
-    options.add_argument("--disable-plugins")
-    
-    # Disable images to speed up loading
-    prefs = {
-        "profile.managed_default_content_settings.images": 2,
-        "profile.default_content_settings.popups": 2,
-    }
-    options.add_experimental_option("prefs", prefs)
-    
-    # Suppress console messages
-    options.add_argument("--log-level=3") 
-    options.add_experimental_option('excludeSwitches', ['enable-logging'])
-    
-    # In CI environment, use a simpler approach
-    if os.getenv('CI') or os.getenv('GITHUB_ACTIONS'):
-        try:
-            driver = webdriver.Chrome(options=options)
-            return driver
-        except Exception as e:
-            print(f"Error creating Chrome driver directly: {e}")
-            # Fall back to using ChromeDriverManager
-            pass
-    
-    # Standard approach with ChromeDriverManager
-    service = Service(ChromeDriverManager().install())
+    # Create the WebDriver with the specified options
     driver = webdriver.Chrome(service=service, options=options)
+    
     return driver
+
+
+
 
 # Extract product name and price from Amazon
 def scrape_amazon_product(product_url):
