@@ -12,6 +12,13 @@ from webdriver_manager.chrome import ChromeDriverManager
 from pushbullet import Pushbullet
 from decimal import Decimal
 import tempfile
+import logging
+import django
+from django.utils import timezone
+
+# Logging setup for debugging
+logging.basicConfig(level=logging.DEBUG)
+logging.debug("Starting script...")
 
 # Pushbullet API key
 PB_API_KEY = os.getenv('PB_API_KEY', 'default_pushbullet_api_key')
@@ -20,12 +27,11 @@ def send_push_notification(title, body):
     try:
         pb = Pushbullet(PB_API_KEY)
         pb.push_note(title, body)
-        print("✅ Push notification sent!")
+        logging.info("✅ Push notification sent!")
     except Exception as e:
-        print(f"❌ Failed to send push: {e}")
+        logging.error(f"❌ Failed to send push: {e}")
 
 # Redirect stdout to suppress ChromeDriverManager messages
-# Comment out these lines if you want to see the messages
 original_stdout = sys.stdout
 sys.stdout = open(os.devnull, 'w')
 
@@ -40,15 +46,13 @@ def setup_driver():
     options.add_argument("--disable-dev-shm-usage")
     options.add_argument(f"--user-data-dir={user_data_dir}")  # Unique user data directory
     
-    # Set up the ChromeDriver service
-    service = Service("/path/to/chromedriver")  # Ensure chromedriver is correctly set up
+    # Set up ChromeDriver using the webdriver-manager to automatically handle the ChromeDriver
+    service = Service(ChromeDriverManager().install())  # Using ChromeDriverManager to get the correct chromedriver path
     
     # Create the WebDriver with the specified options
     driver = webdriver.Chrome(service=service, options=options)
     
     return driver
-
-
 
 
 # Extract product name and price from Amazon
@@ -106,7 +110,7 @@ def scrape_amazon_product(product_url):
                 price = price_matches[0]
     
     except Exception as e:
-        pass
+        logging.error(f"Error scraping Amazon: {e}")
     finally:
         driver.quit()
     
@@ -182,8 +186,8 @@ def scrape_flipkart_product(product_url):
             if price_matches:
                 price = price_matches[0].strip()
 
-    except Exception:
-        pass
+    except Exception as e:
+        logging.error(f"Error scraping Flipkart: {e}")
     finally:
         driver.quit()
     
@@ -191,7 +195,6 @@ def scrape_flipkart_product(product_url):
 
 # --- Save scraped data to Django DB ---
 def save_to_db():
-    import django
     os.environ.setdefault('DJANGO_SETTINGS_MODULE', 'price_tracking_project.settings')
     django.setup()
     from tracker.models import ProductPrice
@@ -210,7 +213,7 @@ def save_to_db():
         current_price = clean_price(amazon_price)
 
         if last_amazon is None or current_price < clean_price(last_amazon.price):
-            ProductPrice.objects.create(platform="Amazon", name=amazon_name, price=amazon_price, scraped_at=django.utils.timezone.now())
+            ProductPrice.objects.create(platform="Amazon", name=amazon_name, price=amazon_price, scraped_at=timezone.now())
             send_push_notification("📉 Amazon Price Drop!", f"{amazon_name}\nNew Price: {amazon_price}")
 
     if flipkart_name and flipkart_price:
@@ -218,10 +221,10 @@ def save_to_db():
         current_price = clean_price(flipkart_price)
 
         if last_flipkart is None or current_price < clean_price(last_flipkart.price):
-            ProductPrice.objects.create(platform="Flipkart", name=flipkart_name, price=flipkart_price, scraped_at=django.utils.timezone.now())
+            ProductPrice.objects.create(platform="Flipkart", name=flipkart_name, price=flipkart_price, scraped_at=timezone.now())
             send_push_notification("📉 Flipkart Price Drop!", f"{flipkart_name}\nNew Price: {flipkart_price}")
 
 # To run the scraper
 if __name__ == "__main__":
-    # get_product_info()
+    logging.debug("Before starting the scraping process")
     save_to_db()

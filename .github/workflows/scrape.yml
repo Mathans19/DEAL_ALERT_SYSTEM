@@ -28,7 +28,7 @@ jobs:
         pip install -r requirements.txt
 
     - name: Set up Chrome and ChromeDriver
-      uses: browser-actions/setup-chrome@v1  # Use this to install Chrome
+      uses: browser-actions/setup-chrome@v1
       with:
         chromedriver-version: 'latest'  # Ensure it matches your Chrome version
 
@@ -36,7 +36,7 @@ jobs:
       run: |
         pip install -r requirements.txt
 
-    - name: Run scraper
+    - name: Run scraper with debugging
       env:
         DB_NAME: ${{ secrets.DB_NAME }}
         DB_USER: ${{ secrets.DB_USER }}
@@ -46,4 +46,5 @@ jobs:
         PB_API_KEY: ${{ secrets.PB_API_KEY }}
         CI: true
       run: |
-        python track_prices.py
+        echo "Running track_prices.py script..."
+        python -m pdb track_prices.py  # Run with Python debugger to step through errors
