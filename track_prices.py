@@ -184,6 +184,7 @@ def scrape_flipkart_product(product_url):
     
     return product_name, price
 
+
 # --- Save scraped data to Django DB ---
 def save_to_db():
     os.environ.setdefault('DJANGO_SETTINGS_MODULE', 'price_tracking_project.settings')
@@ -197,23 +198,35 @@ def save_to_db():
     flipkart_name, flipkart_price = scrape_flipkart_product(flipkart_url)
 
     def clean_price(price_str):
-        return Decimal(price_str.replace("₹", "").replace(",", "").strip())
+        return Decimal(price_str.replace("₹", "").replace("Γé╣", "").replace(",", "").strip())
 
+    # Amazon Logic
     if amazon_name and amazon_price:
         last_amazon = ProductPrice.objects.filter(platform="Amazon").order_by("-scraped_at").first()
         current_price = clean_price(amazon_price)
 
-        if last_amazon is None or current_price < clean_price(last_amazon.price):
-            ProductPrice.objects.create(platform="Amazon", name=amazon_name, price=amazon_price, scraped_at=timezone.now())
+        if last_amazon is None:  # If no previous data exists
+            ProductPrice.objects.create(platform="Amazon", name=amazon_name, price=str(current_price), scraped_at=timezone.now())
             send_push_notification("📉 Amazon Price Drop!", f"{amazon_name}\nNew Price: {amazon_price}")
+        else:
+            last_price = clean_price(last_amazon.price)
+            if current_price < last_price:  # Only if new price is lower
+                ProductPrice.objects.create(platform="Amazon", name=amazon_name, price=str(current_price), scraped_at=timezone.now())
+                send_push_notification("📉 Amazon Price Drop!", f"{amazon_name}\nNew Price: {amazon_price}")
 
+    # Flipkart Logic
     if flipkart_name and flipkart_price:
         last_flipkart = ProductPrice.objects.filter(platform="Flipkart").order_by("-scraped_at").first()
         current_price = clean_price(flipkart_price)
 
-        if last_flipkart is None or current_price < clean_price(last_flipkart.price):
-            ProductPrice.objects.create(platform="Flipkart", name=flipkart_name, price=flipkart_price, scraped_at=timezone.now())
+        if last_flipkart is None:  # If no previous data exists
+            ProductPrice.objects.create(platform="Flipkart", name=flipkart_name, price=str(current_price), scraped_at=timezone.now())
             send_push_notification("📉 Flipkart Price Drop!", f"{flipkart_name}\nNew Price: {flipkart_price}")
+        else:
+            last_price = clean_price(last_flipkart.price)
+            if current_price < last_price:  # Only if new price is lower
+                ProductPrice.objects.create(platform="Flipkart", name=flipkart_name, price=str(current_price), scraped_at=timezone.now())
+                send_push_notification("📉 Flipkart Price Drop!", f"{flipkart_name}\nNew Price: {flipkart_price}")
 
 # To run the scraper
 if __name__ == "__main__":
