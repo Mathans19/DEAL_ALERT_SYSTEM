@@ -76,15 +76,15 @@ WSGI_APPLICATION = 'price_tracking_project.wsgi.application'
 
 # Database
 # https://docs.djangoproject.com/en/4.2/ref/settings/#databases
-
+import os
 DATABASES = {
     'default': {
         'ENGINE': 'django.db.backends.postgresql',
-        'NAME': 'price_tracking_db',
-        'USER': 'price_tracking_db_user',
-        'PASSWORD': '1y47xChEIW8UcaTn6Cs92tdyXjRr1bYP',
-        'HOST': 'dpg-d062ko2li9vc73duo800-a.oregon-postgres.render.com',
-        'PORT': '5432',
+        'NAME': os.getenv('DB_NAME', 'default_db_name'),
+        'USER': os.getenv('DB_USER', 'default_db_user'),
+        'PASSWORD': os.getenv('DB_PASSWORD', 'default_password'),
+        'HOST': os.getenv('DB_HOST', 'localhost'),
+        'PORT': os.getenv('DB_PORT', '5432'),
     }
 }
 

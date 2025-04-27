@@ -12,8 +12,8 @@ from webdriver_manager.chrome import ChromeDriverManager
 from pushbullet import Pushbullet
 from decimal import Decimal
 
-# Replace with your actual Pushbullet token
-PB_API_KEY = "o.Oea01lSquM8gZP7smaP7A4Mnf91vn44p"
+# Pushbullet API key
+PB_API_KEY = os.getenv('PB_API_KEY', 'default_pushbullet_api_key')
 
 def send_push_notification(title, body):
     try:
