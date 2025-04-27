@@ -53,19 +53,17 @@ def setup_driver():
     options.add_argument("--log-level=3")  # Only fatal errors
     options.add_experimental_option('excludeSwitches', ['enable-logging'])
 
-    # Use a temporary directory for the user data to prevent conflicts
-    user_data_dir = tempfile.mkdtemp()
-    options.add_argument(f"--user-data-dir={user_data_dir}")
+    # REMOVE THIS SECTION - causing the error
+    # user_data_dir = tempfile.mkdtemp()
+    # options.add_argument(f"--user-data-dir={user_data_dir}")
     
     # Create a silent service
     service = Service(ChromeDriverManager().install())
     
-    # For Windows, add creation_flags to hide console window
-    if sys.platform.startswith('win'):
-        service.creation_flags = 0x08000000  # CREATE_NO_WINDOW
-
     driver = webdriver.Chrome(service=service, options=options)
     return driver
+
+
 
 # Extract product name and price from Amazon
 def scrape_amazon_product(product_url):

@@ -21,10 +21,20 @@ jobs:
       with:
         python-version: '3.9'  # Specify the Python version you're using
 
+    - name: Install Chrome
+      run: |
+        wget -q -O - https://dl-ssl.google.com/linux/linux_signing_key.pub | sudo apt-key add -
+        echo "deb [arch=amd64] http://dl.google.com/linux/chrome/deb/ stable main" | sudo tee /etc/apt/sources.list.d/google-chrome.list
+        sudo apt-get update
+        sudo apt-get install -y google-chrome-stable
+        google-chrome --version  # Verify Chrome installation
+
     - name: Install dependencies
       run: |
-        pip install -r requirements.txt  # Make sure your requirements.txt includes necessary dependencies like selenium, pushbullet, etc.
+        pip install -r requirements.txt
 
     - name: Run Scraping Task
+      env:
+        PB_API_KEY: ${{ secrets.PB_API_KEY }}  # Make sure you've added this secret in your repo settings
       run: |
-        python track_prices.py  # This is the file where your scraping logic is defined
+        python track_prices.py
