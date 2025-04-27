@@ -10,7 +10,7 @@ on:
 
 jobs:
   scrape:
-    runs-on: ubuntu-latest
+    runs-on: windows-latest  # Use Windows runner for your setup
 
     steps:
     - name: Checkout repository
@@ -23,33 +23,27 @@ jobs:
 
     - name: Install system dependencies
       run: |
-        sudo apt-get update
-        sudo apt-get install -y xvfb
-
-    - name: Setup Chrome
-      uses: browser-actions/setup-chrome@v1
-
-    - name: Kill existing Chrome processes
-      run: |
-        killall chrome || true
-        killall chromium || true
-        killall chromedriver || true
-
-    - name: Install Python dependencies
-      run: |
+        choco install python3
         python -m pip install --upgrade pip
         pip install -r requirements.txt
 
-    - name: Run scraper with Xvfb
+    - name: Set up Chrome and ChromeDriver
+      uses: browser-actions/setup-chrome@v1  # Use this to install Chrome
+      with:
+        chromedriver-version: 'latest'  # Ensure it matches your Chrome version
+
+    - name: Install Python dependencies
+      run: |
+        pip install -r requirements.txt
+
+    - name: Run scraper
       env:
-        # Database credentials for Render PostgreSQL
         DB_NAME: ${{ secrets.DB_NAME }}
         DB_USER: ${{ secrets.DB_USER }}
         DB_PASSWORD: ${{ secrets.DB_PASSWORD }}
         DB_HOST: ${{ secrets.DB_HOST }}
         DB_PORT: ${{ secrets.DB_PORT }}
-        # Pushbullet API key
         PB_API_KEY: ${{ secrets.PB_API_KEY }}
         CI: true
       run: |
-        xvfb-run --server-args="-screen 0 1920x1080x24" python track_prices.py
+        python track_prices.py
