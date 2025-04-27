@@ -27,28 +27,24 @@ jobs:
         sudo apt-get install -y python3-pip python3-dev wget unzip
         pip install --upgrade pip
 
-    - name: Set up Google Chrome and ChromeDriver
+    - name: Set up Chrome and ChromeDriver
       run: |
-        # Install Google Chrome
+        # Install Chrome
         sudo apt install -y google-chrome-stable
         
-        # Get the Chrome version and extract major version
-        CHROME_VERSION=$(google-chrome --version | awk '{print $3}' | cut -d'.' -f1)
-        echo "Chrome major version: $CHROME_VERSION"
+        # Print Chrome version for debugging
+        CHROME_VERSION=$(google-chrome --version)
+        echo "Chrome version: $CHROME_VERSION"
         
-        # Download the corresponding ChromeDriver version
-        DRIVER_VERSION=$(curl -sS "chromedriver.storage.googleapis.com/LATEST_RELEASE_$CHROME_VERSION")
-        echo "ChromeDriver version: $DRIVER_VERSION"
-        
-        # Download and install ChromeDriver
-        wget "https://chromedriver.storage.googleapis.com/$DRIVER_VERSION/chromedriver_linux64.zip"
-        unzip chromedriver_linux64.zip
-        sudo mv chromedriver /usr/local/bin/
-        sudo chmod +x /usr/local/bin/chromedriver
+        # Use Selenium Manager which automatically handles ChromeDriver
+        echo "Skipping manual ChromeDriver download - Selenium Manager will handle this automatically"
 
     - name: Install Python dependencies
       run: |
         pip install -r requirements.txt
+        
+        # Make sure we have the latest selenium with Selenium Manager support
+        pip install --upgrade selenium
 
     - name: Run scraper
       env:

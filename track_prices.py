@@ -28,6 +28,7 @@ def send_push_notification(title, body):
 # Redirect stdout to suppress ChromeDriverManager messages
 sys.stdout = open(os.devnull, 'w')
 
+
 def setup_driver():
     # Create a temporary directory for user data
     user_data_dir = tempfile.mkdtemp()
@@ -38,13 +39,12 @@ def setup_driver():
     options.add_argument("--disable-dev-shm-usage")
     options.add_argument(f"--user-data-dir={user_data_dir}")  # Unique user data directory
     
-    # Set up ChromeDriver using the webdriver-manager to automatically handle the ChromeDriver
-    service = Service(ChromeDriverManager().install())  # Using ChromeDriverManager to get the correct chromedriver path
-    
     # Create the WebDriver with the specified options
-    driver = webdriver.Chrome(service=service, options=options)
+    # No need for ChromeDriverManager - Selenium will handle this automatically
+    driver = webdriver.Chrome(options=options)
     
     return driver
+
 
 # Extract product name and price from Amazon
 def scrape_amazon_product(product_url):
