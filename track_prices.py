@@ -11,6 +11,7 @@ from selenium.webdriver.support import expected_conditions as EC
 from webdriver_manager.chrome import ChromeDriverManager
 from pushbullet import Pushbullet
 from decimal import Decimal
+import tempfile
 
 # Pushbullet API key
 PB_API_KEY = os.getenv('PB_API_KEY', 'default_pushbullet_api_key')
@@ -28,7 +29,7 @@ def send_push_notification(title, body):
 original_stdout = sys.stdout
 sys.stdout = open(os.devnull, 'w')
 
-# Setup Selenium WebDriver with completely silent mode
+ # Setup Selenium WebDriver with completely silent mode
 def setup_driver():
     options = Options()
     options.headless = True  # Run in headless mode
@@ -51,6 +52,10 @@ def setup_driver():
     # Suppress console messages
     options.add_argument("--log-level=3")  # Only fatal errors
     options.add_experimental_option('excludeSwitches', ['enable-logging'])
+
+    # Use a temporary directory for the user data to prevent conflicts
+    user_data_dir = tempfile.mkdtemp()
+    options.add_argument(f"--user-data-dir={user_data_dir}")
     
     # Create a silent service
     service = Service(ChromeDriverManager().install())
