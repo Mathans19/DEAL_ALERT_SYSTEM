@@ -30,7 +30,6 @@ original_stdout = sys.stdout
 sys.stdout = open(os.devnull, 'w')
 
 
-
 def setup_driver():
     options = Options()
     options.headless = True
@@ -42,6 +41,10 @@ def setup_driver():
     
     # Add user agent
     options.add_argument("user-agent=Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/135.0.0.0 Safari/537.36")
+    
+    # Create a unique temporary directory for user data
+    temp_dir = tempfile.mkdtemp()
+    options.add_argument(f"--user-data-dir={temp_dir}")
     
     # Important: Forces Chrome to run without any user data
     options.add_argument("--incognito")
@@ -61,7 +64,6 @@ def setup_driver():
     
     # In CI environment, use a simpler approach
     if os.getenv('CI') or os.getenv('GITHUB_ACTIONS'):
-        # For GitHub Actions, use a direct approach with Chrome
         try:
             driver = webdriver.Chrome(options=options)
             return driver
@@ -74,7 +76,6 @@ def setup_driver():
     service = Service(ChromeDriverManager().install())
     driver = webdriver.Chrome(service=service, options=options)
     return driver
-
 
 # Extract product name and price from Amazon
 def scrape_amazon_product(product_url):

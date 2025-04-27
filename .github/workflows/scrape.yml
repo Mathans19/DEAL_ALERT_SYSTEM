@@ -29,6 +29,12 @@ jobs:
     - name: Setup Chrome
       uses: browser-actions/setup-chrome@v1
 
+    - name: Kill existing Chrome processes
+      run: |
+        killall chrome || true
+        killall chromium || true
+        killall chromedriver || true
+
     - name: Install Python dependencies
       run: |
         python -m pip install --upgrade pip
