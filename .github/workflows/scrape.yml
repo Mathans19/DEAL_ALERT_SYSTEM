@@ -29,21 +29,14 @@ jobs:
 
     - name: Set up Chrome and ChromeDriver
       run: |
-        # Install Chrome
         sudo apt install -y google-chrome-stable
-        
-        # Print Chrome version for debugging
         CHROME_VERSION=$(google-chrome --version)
         echo "Chrome version: $CHROME_VERSION"
-        
-        # Use Selenium Manager which automatically handles ChromeDriver
         echo "Skipping manual ChromeDriver download - Selenium Manager will handle this automatically"
 
     - name: Install Python dependencies
       run: |
         pip install -r requirements.txt
-        
-        # Make sure we have the latest selenium with Selenium Manager support
         pip install --upgrade selenium
 
     - name: Run scraper
