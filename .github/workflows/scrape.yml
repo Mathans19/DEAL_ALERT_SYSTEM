@@ -36,7 +36,7 @@ jobs:
       run: |
         pip install -r requirements.txt
 
-    - name: Run scraper with debugging
+    - name: Run scraper
       env:
         DB_NAME: ${{ secrets.DB_NAME }}
         DB_USER: ${{ secrets.DB_USER }}
@@ -47,4 +47,4 @@ jobs:
         CI: true
       run: |
         echo "Running track_prices.py script..."
-        python -m pdb track_prices.py  # Run with Python debugger to step through errors
+        python track_prices.py  # Run the script without debugging
