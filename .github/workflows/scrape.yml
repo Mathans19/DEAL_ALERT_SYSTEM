@@ -2,15 +2,15 @@ name: Automate Scraping Task
 
 on:
   schedule:
-    # This cron job will trigger the task every hour
-    - cron: '0 * * * *'  # Run at the start of every hour
+    - cron: '0 * * * *'  # Run every hour
   push:
     branches:
-      - main  # Runs on push to the 'main' branch
+      - main
+  workflow_dispatch:  # Allow manual triggers
 
 jobs:
   scrape:
-    runs-on: ubuntu-latest  # Use an Ubuntu runner
+    runs-on: ubuntu-latest
 
     steps:
     - name: Checkout repository
@@ -19,22 +19,31 @@ jobs:
     - name: Set up Python
       uses: actions/setup-python@v4
       with:
-        python-version: '3.9'  # Specify the Python version you're using
+        python-version: '3.9'
 
-    - name: Install Chrome
+    - name: Install system dependencies
       run: |
-        wget -q -O - https://dl-ssl.google.com/linux/linux_signing_key.pub | sudo apt-key add -
-        echo "deb [arch=amd64] http://dl.google.com/linux/chrome/deb/ stable main" | sudo tee /etc/apt/sources.list.d/google-chrome.list
         sudo apt-get update
-        sudo apt-get install -y google-chrome-stable
-        google-chrome --version  # Verify Chrome installation
+        sudo apt-get install -y xvfb
 
-    - name: Install dependencies
+    - name: Setup Chrome
+      uses: browser-actions/setup-chrome@v1
+
+    - name: Install Python dependencies
       run: |
+        python -m pip install --upgrade pip
         pip install -r requirements.txt
 
-    - name: Run Scraping Task
+    - name: Run scraper with Xvfb
       env:
-        PB_API_KEY: ${{ secrets.PB_API_KEY }}  # Make sure you've added this secret in your repo settings
+        # Database credentials for Render PostgreSQL
+        DB_NAME: ${{ secrets.DB_NAME }}
+        DB_USER: ${{ secrets.DB_USER }}
+        DB_PASSWORD: ${{ secrets.DB_PASSWORD }}
+        DB_HOST: ${{ secrets.DB_HOST }}
+        DB_PORT: ${{ secrets.DB_PORT }}
+        # Pushbullet API key
+        PB_API_KEY: ${{ secrets.PB_API_KEY }}
+        CI: true
       run: |
-        python track_prices.py
+        xvfb-run --server-args="-screen 0 1920x1080x24" python track_prices.py

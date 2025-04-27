@@ -29,10 +29,11 @@ def send_push_notification(title, body):
 original_stdout = sys.stdout
 sys.stdout = open(os.devnull, 'w')
 
- # Setup Selenium WebDriver with completely silent mode
+
+
 def setup_driver():
     options = Options()
-    options.headless = True  # Run in headless mode
+    options.headless = True
     options.add_argument("--ignore-certificate-errors")
     options.add_argument("--disable-gpu")
     options.add_argument("--no-sandbox")
@@ -42,6 +43,11 @@ def setup_driver():
     # Add user agent
     options.add_argument("user-agent=Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/135.0.0.0 Safari/537.36")
     
+    # Important: Forces Chrome to run without any user data
+    options.add_argument("--incognito")
+    options.add_argument("--disable-extensions")
+    options.add_argument("--disable-plugins")
+    
     # Disable images to speed up loading
     prefs = {
         "profile.managed_default_content_settings.images": 2,
@@ -50,19 +56,24 @@ def setup_driver():
     options.add_experimental_option("prefs", prefs)
     
     # Suppress console messages
-    options.add_argument("--log-level=3")  # Only fatal errors
+    options.add_argument("--log-level=3") 
     options.add_experimental_option('excludeSwitches', ['enable-logging'])
-
-    # REMOVE THIS SECTION - causing the error
-    # user_data_dir = tempfile.mkdtemp()
-    # options.add_argument(f"--user-data-dir={user_data_dir}")
     
-    # Create a silent service
+    # In CI environment, use a simpler approach
+    if os.getenv('CI') or os.getenv('GITHUB_ACTIONS'):
+        # For GitHub Actions, use a direct approach with Chrome
+        try:
+            driver = webdriver.Chrome(options=options)
+            return driver
+        except Exception as e:
+            print(f"Error creating Chrome driver directly: {e}")
+            # Fall back to using ChromeDriverManager
+            pass
+    
+    # Standard approach with ChromeDriverManager
     service = Service(ChromeDriverManager().install())
-    
     driver = webdriver.Chrome(service=service, options=options)
     return driver
-
 
 
 # Extract product name and price from Amazon

@@ -129,14 +129,3 @@ STATIC_URL = 'static/'
 
 DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
 
-
-from celery.schedules import crontab
-
-CELERY_BROKER_URL = 'redis://localhost:6379/0'  # Redis must be running
-
-CELERY_BEAT_SCHEDULE = {
-    'scrape-every-hour': {
-        'task': 'tracker.tasks.scrape_and_store_product_data',
-        'schedule': crontab(minute=0, hour='*/1'),  # Every 1 hour
-    },
-}
