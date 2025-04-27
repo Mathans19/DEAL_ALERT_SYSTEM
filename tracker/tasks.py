@@ -1,6 +1,6 @@
 from celery import shared_task
-from .scraper import save_to_db  # Import the right function
+from price_tracking_project.track_prices import save_to_db  # Import the function to save to DB
 
 @shared_task
-def scrape_and_store_product_data():
-    save_to_db()  # This stores scraped data to DB
+def scrape_and_save():
+    save_to_db()

@@ -79,15 +79,14 @@ WSGI_APPLICATION = 'price_tracking_project.wsgi.application'
 
 DATABASES = {
     'default': {
-        'ENGINE': 'django.db.backends.mysql',
-        'NAME': 'price_tracker_db',  # Change this to your database name
-        'USER': 'root',   # Your MySQL username
-        'PASSWORD': 'root',  # Your MySQL password
-        'HOST': 'localhost',  # Can be changed if you're using remote DB
-        'PORT': '3306',  # Default MySQL port
+        'ENGINE': 'django.db.backends.postgresql',
+        'NAME': 'price_tracking_db',
+        'USER': 'price_tracking_db_user',
+        'PASSWORD': '1y47xChEIW8UcaTn6Cs92tdyXjRr1bYP',
+        'HOST': 'dpg-d062ko2li9vc73duo800-a.oregon-postgres.render.com',
+        'PORT': '5432',
     }
 }
-
 
 # Password validation
 # https://docs.djangoproject.com/en/4.2/ref/settings/#auth-password-validators

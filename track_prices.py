@@ -9,6 +9,19 @@ from selenium.webdriver.chrome.options import Options
 from selenium.webdriver.support.ui import WebDriverWait
 from selenium.webdriver.support import expected_conditions as EC
 from webdriver_manager.chrome import ChromeDriverManager
+from pushbullet import Pushbullet
+from decimal import Decimal
+
+# Replace with your actual Pushbullet token
+PB_API_KEY = "o.Oea01lSquM8gZP7smaP7A4Mnf91vn44p"
+
+def send_push_notification(title, body):
+    try:
+        pb = Pushbullet(PB_API_KEY)
+        pb.push_note(title, body)
+        print("✅ Push notification sent!")
+    except Exception as e:
+        print(f"❌ Failed to send push: {e}")
 
 # Redirect stdout to suppress ChromeDriverManager messages
 # Comment out these lines if you want to see the messages
@@ -58,12 +71,10 @@ def scrape_amazon_product(product_url):
     try:
         driver.get(product_url)
         
-        # Wait for page to load
         WebDriverWait(driver, 10).until(
             EC.presence_of_element_located((By.TAG_NAME, "body"))
         )
         
-        # Try to get product name
         name_selectors = [
             (By.ID, 'productTitle'),
             (By.CSS_SELECTOR, '.product-title-word-break'),
@@ -79,7 +90,6 @@ def scrape_amazon_product(product_url):
             except Exception:
                 continue
         
-        # Try to get product price
         price_selectors = [
             (By.CSS_SELECTOR, '.a-price .a-offscreen'),
             (By.CSS_SELECTOR, '.a-price-whole'),
@@ -100,7 +110,6 @@ def scrape_amazon_product(product_url):
             except Exception:
                 continue
         
-        # If no price found, try to get all text and find price pattern
         if not price:
             body_text = driver.find_element(By.TAG_NAME, 'body').text
             price_matches = re.findall(r'₹\s?[\d,]+\.\d{2}|₹\s?[\d,]+', body_text)
@@ -108,7 +117,7 @@ def scrape_amazon_product(product_url):
                 price = price_matches[0]
     
     except Exception as e:
-        pass  # Silently handle errors
+        pass
     finally:
         driver.quit()
     
@@ -123,12 +132,10 @@ def scrape_flipkart_product(product_url):
     try:
         driver.get(product_url)
         
-        # Wait for page to load
         WebDriverWait(driver, 15).until(
             EC.presence_of_element_located((By.TAG_NAME, "body"))
         )
         
-        # Check for and close any popups if present
         try:
             popups = driver.find_elements(By.CSS_SELECTOR, "button._2KpZ6l._2doB4z")
             if popups:
@@ -137,7 +144,6 @@ def scrape_flipkart_product(product_url):
         except:
             pass
         
-        # Try to get product name
         name_selectors = [
             (By.CSS_SELECTOR, '.B_NuCI'),
             (By.CSS_SELECTOR, '.yhB1nd'),
@@ -157,13 +163,11 @@ def scrape_flipkart_product(product_url):
             except Exception:
                 continue
         
-        # If still no name found, try getting it from page title
         if not product_name:
             page_title = driver.title
             if page_title and "Flipkart.com" in page_title:
                 product_name = page_title.split(" - ")[0].strip()
         
-        # Try to get product price
         price_selectors = [
             (By.CSS_SELECTOR, '._30jeq3._16Jk6d'),
             (By.CSS_SELECTOR, '._30jeq3'),
@@ -183,7 +187,6 @@ def scrape_flipkart_product(product_url):
             except Exception:
                 continue
         
-        # If no price found, try to get all text and find price pattern
         if not price:
             body_text = driver.find_element(By.TAG_NAME, 'body').text
             price_matches = re.findall(r'₹\s?[\d,]+(?:\.\d{1,2})?', body_text)
@@ -191,34 +194,32 @@ def scrape_flipkart_product(product_url):
                 price = price_matches[0].strip()
 
     except Exception:
-        pass  # Silently handle errors
+        pass
     finally:
         driver.quit()
     
     return product_name, price
 
 # Function to get product info from both sites
-def get_product_info():
-    amazon_url = "https://www.amazon.in/dp/B0DM28ZYKN/"
-    flipkart_url = "https://www.flipkart.com/conscious-chemist-sunscreen-spf-50-pa-niacinamide-blueberry-water-resistant-no-white-cast/p/itmfd5749fa16dfb"
+# def get_product_info():
+#     amazon_url = "https://www.amazon.in/dp/B0DM28ZYKN/"
+#     flipkart_url = "https://www.flipkart.com/conscious-chemist-sunscreen-spf-50-pa-niacinamide-blueberry-water-resistant-no-white-cast/p/itmfd5749fa16dfb"
 
-    # Restore stdout for our actual output
-    sys.stdout = original_stdout
+#     sys.stdout = original_stdout  # Restore stdout
     
-    # No progress messages to keep it clean
-    amazon_name, amazon_price = scrape_amazon_product(amazon_url)
-    flipkart_name, flipkart_price = scrape_flipkart_product(flipkart_url)
+#     amazon_name, amazon_price = scrape_amazon_product(amazon_url)
+#     flipkart_name, flipkart_price = scrape_flipkart_product(flipkart_url)
 
-    # Print product information
-    print("\n===== Amazon Product =====")
-    print(f"Product: {amazon_name if amazon_name else 'Name not found'}")
-    print(f"Price: {amazon_price if amazon_price else 'Price not found'}")
+#     print("\n===== Amazon Product =====")
+#     print(f"Product: {amazon_name if amazon_name else 'Name not found'}")
+#     print(f"Price: {amazon_price if amazon_price else 'Price not found'}")
     
-    print("\n===== Flipkart Product =====")
-    print(f"Product: {flipkart_name if flipkart_name else 'Name not found'}")
-    print(f"Price: {flipkart_price if flipkart_price else 'Price not found'}")
+#     print("\n===== Flipkart Product =====")
+#     print(f"Product: {flipkart_name if flipkart_name else 'Name not found'}")
+#     print(f"Price: {flipkart_price if flipkart_price else 'Price not found'}")
 
-# --- Save scraped data to Django DB ---
+# # --- Save scraped data to Django DB ---
+
 def save_to_db():
     import django
     os.environ.setdefault('DJANGO_SETTINGS_MODULE', 'price_tracking_project.settings')
@@ -231,22 +232,26 @@ def save_to_db():
     amazon_name, amazon_price = scrape_amazon_product(amazon_url)
     flipkart_name, flipkart_price = scrape_flipkart_product(flipkart_url)
 
+    def clean_price(price_str):
+        return Decimal(price_str.replace("₹", "").replace(",", "").strip())
+
     if amazon_name and amazon_price:
-        ProductPrice.objects.create(
-            platform="Amazon",
-            name=amazon_name,
-            price=amazon_price
-        )
+        last_amazon = ProductPrice.objects.filter(platform="Amazon").order_by("-scraped_at").first()
+        current_price = clean_price(amazon_price)
+
+        if last_amazon is None or current_price < clean_price(last_amazon.price):
+            ProductPrice.objects.create(platform="Amazon", name=amazon_name, price=amazon_price, scraped_at=django.utils.timezone.now())
+            send_push_notification("📉 Amazon Price Drop!", f"{amazon_name}\nNew Price: {amazon_price}")
 
     if flipkart_name and flipkart_price:
-        ProductPrice.objects.create(
-            platform="Flipkart",
-            name=flipkart_name,
-            price=flipkart_price
-        )
+        last_flipkart = ProductPrice.objects.filter(platform="Flipkart").order_by("-scraped_at").first()
+        current_price = clean_price(flipkart_price)
 
+        if last_flipkart is None or current_price < clean_price(last_flipkart.price):
+            ProductPrice.objects.create(platform="Flipkart", name=flipkart_name, price=flipkart_price, scraped_at=django.utils.timezone.now())
+            send_push_notification("📉 Flipkart Price Drop!", f"{flipkart_name}\nNew Price: {flipkart_price}")
 
 # To run the scraper
 if __name__ == "__main__":
-    get_product_info()
-    save_to_db()  # Save data after printing
+    # get_product_info()
+    save_to_db()
