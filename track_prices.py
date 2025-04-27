@@ -96,7 +96,7 @@ def scrape_amazon_product(product_url):
         
         if not price:
             body_text = driver.find_element(By.TAG_NAME, 'body').text
-            price_matches = re.findall(r'?\s?[\d,]+\.\d{2}|?\s?[\d,]+', body_text)
+            price_matches = re.findall(r'₹\s?[\d,]+\.\d{2}|₹\s?[\d,]+', body_text)
             if price_matches:
                 price = price_matches[0]
     
@@ -166,14 +166,14 @@ def scrape_flipkart_product(product_url):
                 elements = driver.find_elements(selector_type, selector)
                 if elements and elements[0].text.strip():
                     price = elements[0].text.strip()
-                    price = re.sub(r'[^?\d,.]', '', price)
+                    price = re.sub(r'[^₹\d,.]', '', price)
                     break
             except Exception:
                 continue
         
         if not price:
             body_text = driver.find_element(By.TAG_NAME, 'body').text
-            price_matches = re.findall(r'?\s?[\d,]+(?:\.\d{1,2})?', body_text)
+            price_matches = re.findall(r'₹\s?[\d,]+(?:\.\d{1,2})?', body_text)
             if price_matches:
                 price = price_matches[0].strip()
 
@@ -198,7 +198,7 @@ def save_to_db():
     flipkart_name, flipkart_price = scrape_flipkart_product(flipkart_url)
 
     def clean_price(price_str):
-        return Decimal(price_str.replace("?", "").replace("Gé¦", "").replace(",", "").strip())
+        return Decimal(price_str.replace("₹", "").replace("Γé╣", "").replace(",", "").strip())
 
     # Amazon Logic
     if amazon_name and amazon_price:
@@ -207,12 +207,12 @@ def save_to_db():
 
         if last_amazon is None:  # If no previous data exists
             ProductPrice.objects.create(platform="Amazon", name=amazon_name, price=str(current_price), scraped_at=timezone.now())
-            send_push_notification("?? Amazon Price Drop!", f"{amazon_name}\nNew Price: {amazon_price}")
+            send_push_notification("📉 Amazon Price Drop!", f"{amazon_name}\nNew Price: {amazon_price}")
         else:
             last_price = clean_price(last_amazon.price)
             if current_price < last_price:  # Only if new price is lower
                 ProductPrice.objects.create(platform="Amazon", name=amazon_name, price=str(current_price), scraped_at=timezone.now())
-                send_push_notification("?? Amazon Price Drop!", f"{amazon_name}\nNew Price: {amazon_price}")
+                send_push_notification("📉 Amazon Price Drop!", f"{amazon_name}\nNew Price: {amazon_price}")
 
     # Flipkart Logic
     if flipkart_name and flipkart_price:
@@ -221,12 +221,12 @@ def save_to_db():
 
         if last_flipkart is None:  # If no previous data exists
             ProductPrice.objects.create(platform="Flipkart", name=flipkart_name, price=str(current_price), scraped_at=timezone.now())
-            send_push_notification("?? Flipkart Price Drop!", f"{flipkart_name}\nNew Price: {flipkart_price}")
+            send_push_notification("📉 Flipkart Price Drop!", f"{flipkart_name}\nNew Price: {flipkart_price}")
         else:
             last_price = clean_price(last_flipkart.price)
             if current_price < last_price:  # Only if new price is lower
                 ProductPrice.objects.create(platform="Flipkart", name=flipkart_name, price=str(current_price), scraped_at=timezone.now())
-                send_push_notification("?? Flipkart Price Drop!", f"{flipkart_name}\nNew Price: {flipkart_price}")
+                send_push_notification("📉 Flipkart Price Drop!", f"{flipkart_name}\nNew Price: {flipkart_price}")
 
 # To run the scraper
 if __name__ == "__main__":
