@@ -26,17 +26,22 @@ jobs:
         sudo apt-get update
         sudo apt-get install -y python3-pip python3-dev wget unzip
         pip install --upgrade pip
-        pip install -r requirements.txt
 
     - name: Set up Google Chrome and ChromeDriver
       run: |
         # Install Google Chrome
         sudo apt install -y google-chrome-stable
-        # Get the Chrome version
-        CHROME_VERSION=$(google-chrome --version | awk '{print $3}')
+        
+        # Get the Chrome version and extract major version
+        CHROME_VERSION=$(google-chrome --version | awk '{print $3}' | cut -d'.' -f1)
+        echo "Chrome major version: $CHROME_VERSION"
+        
         # Download the corresponding ChromeDriver version
-        DRIVER_VERSION=$(curl -sS chromedriver.storage.googleapis.com/LATEST_RELEASE_$CHROME_VERSION)
-        wget https://chromedriver.storage.googleapis.com/$DRIVER_VERSION/chromedriver_linux64.zip
+        DRIVER_VERSION=$(curl -sS "chromedriver.storage.googleapis.com/LATEST_RELEASE_$CHROME_VERSION")
+        echo "ChromeDriver version: $DRIVER_VERSION"
+        
+        # Download and install ChromeDriver
+        wget "https://chromedriver.storage.googleapis.com/$DRIVER_VERSION/chromedriver_linux64.zip"
         unzip chromedriver_linux64.zip
         sudo mv chromedriver /usr/local/bin/
         sudo chmod +x /usr/local/bin/chromedriver
@@ -56,4 +61,4 @@ jobs:
         CI: true
       run: |
         echo "Running track_prices.py script..."
-        python track_prices.py  # Run the script without debugging
+        python track_prices.py
