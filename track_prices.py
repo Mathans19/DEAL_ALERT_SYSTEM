@@ -149,7 +149,7 @@ def run_scraper():
                 if last_price and current_price < last_price:
                     send_telegram_alert(product, current_price, last_price)
                 elif not last_price:
-                    print(f"Initial price for {product.name}: ₹{current_price}")
+                    print(f"Initial price record for {product.name} saved.")
             
             # Stealth sleep between products
             time.sleep(random.uniform(5, 10))
