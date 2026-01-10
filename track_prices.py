@@ -15,15 +15,22 @@ from datetime import datetime
 from fake_useragent import UserAgent
 from selenium_stealth import stealth
 
-# Configure Django
-os.environ.setdefault('DJANGO_SETTINGS_MODULE', 'price_tracking_project.settings')
-django.setup()
+# Configure Django (only if not already setup)
+if not os.getenv('DJANGO_SETTINGS_MODULE'):
+    os.environ.setdefault('DJANGO_SETTINGS_MODULE', 'price_tracking_project.settings')
 
-from tracker.models import TrackedProduct, ProductPrice
+def init_django():
+    try:
+        django.setup()
+    except Exception:
+        pass
 
-# Suppress ChromeDriverManager messages unless in CI or DEBUG mode
-if not os.getenv('CI') and not os.getenv('DEBUG'):
-    sys.stdout = open(os.devnull, 'w')
+# Only setup if running standalone
+if __name__ == "__main__":
+    init_django()
+    if not os.getenv('CI') and not os.getenv('DEBUG'):
+        # Avoid redirecting stdout if we are in a web environment
+        pass
 
 def setup_driver():
     options = Options()
@@ -244,6 +251,7 @@ def send_telegram_alert(product, current_price, last_price):
     requests.post(url, json=payload)
 
 def run_scraper():
+    from tracker.models import TrackedProduct, ProductPrice
     products = TrackedProduct.objects.all()
     if not products:
         print("No products to track.")
