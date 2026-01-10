@@ -9,8 +9,8 @@ def telegram_webhook(request):
     if request.method == "POST":
         try:
             # Check for token
-            if not bot.token:
-                return HttpResponse("Bot token missing on server", status=500)
+            if not bot.token or bot.token == 'None':
+                return HttpResponse(f"Bot token missing or invalid on server. (Current: {bot.token})", status=500)
 
             json_str = request.body.decode('UTF-8')
             if not json_str:
