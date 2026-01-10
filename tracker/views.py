@@ -70,7 +70,8 @@ def home(request):
                 <p>Bot is connected to Telegram.</p>
                 <div class="debug">
                     Token: {masked_token}<br>
-                    DB: Neon Cloud (PostgreSQL)
+                    DB: Neon Cloud<br>
+                    Mode: Serverless (Sync)
                 </div>
                 
                 <hr style="border: 0; border-top: 1px solid #334155; margin: 1.5rem 0;">
