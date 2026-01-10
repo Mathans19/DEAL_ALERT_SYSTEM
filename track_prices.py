@@ -21,8 +21,9 @@ django.setup()
 
 from tracker.models import TrackedProduct, ProductPrice
 
-# Suppress ChromeDriverManager messages
-sys.stdout = open(os.devnull, 'w')
+# Suppress ChromeDriverManager messages unless in CI or DEBUG mode
+if not os.getenv('CI') and not os.getenv('DEBUG'):
+    sys.stdout = open(os.devnull, 'w')
 
 def setup_driver():
     options = Options()
@@ -52,23 +53,41 @@ def scrape_amazon(driver, url):
     product_name, price = None, None
     try:
         driver.get(url)
-        WebDriverWait(driver, 15).until(EC.presence_of_element_located((By.TAG_NAME, "body")))
+        # Wait for either the product title OR the common "Continue" button
+        WebDriverWait(driver, 20).until(
+            EC.presence_of_element_located((By.CSS_SELECTOR, "#productTitle, .a-button-text, body"))
+        )
         
+        # Handle intermediate "Continue shopping" page if it exists
+        continue_buttons = driver.find_elements(By.XPATH, "//a[contains(text(), 'Continue')]")
+        if continue_buttons:
+            continue_buttons[0].click()
+            WebDriverWait(driver, 15).until(EC.presence_of_element_located((By.ID, "productTitle")))
+
         # Name
-        name_selectors = [ (By.ID, 'productTitle'), (By.CSS_SELECTOR, '.product-title-word-break') ]
+        name_selectors = [ 
+            (By.ID, 'productTitle'), 
+            (By.CSS_SELECTOR, '.product-title-word-break'),
+            (By.CSS_SELECTOR, '#title')
+        ]
         for s_type, s in name_selectors:
             elements = driver.find_elements(s_type, s)
-            if elements:
+            if elements and elements[0].text.strip():
                 product_name = elements[0].text.strip()
                 break
         
         # Price
-        price_selectors = [ (By.CSS_SELECTOR, '.a-price .a-offscreen'), (By.CSS_SELECTOR, '.a-price-whole') ]
+        price_selectors = [ 
+            (By.CSS_SELECTOR, '.a-price .a-offscreen'), 
+            (By.CSS_SELECTOR, '.a-price-whole'),
+            (By.ID, 'priceblock_ourprice'),
+            (By.ID, 'priceblock_dealprice')
+        ]
         for s_type, s in price_selectors:
             elements = driver.find_elements(s_type, s)
             if elements:
                 price = elements[0].text.strip() or elements[0].get_attribute('innerHTML').strip()
-                break
+                if price: break
         
         if not price: # Fallback Regex
             body_text = driver.find_element(By.TAG_NAME, 'body').text
@@ -83,18 +102,28 @@ def scrape_flipkart(driver, url):
     product_name, price = None, None
     try:
         driver.get(url)
-        WebDriverWait(driver, 15).until(EC.presence_of_element_located((By.TAG_NAME, "body")))
+        WebDriverWait(driver, 20).until(EC.presence_of_element_located((By.TAG_NAME, "body")))
         
         # Name
-        name_selectors = [ (By.CSS_SELECTOR, '.B_NuCI'), (By.CSS_SELECTOR, 'h1') ]
+        name_selectors = [ 
+            (By.CSS_SELECTOR, '.B_NuCI'), 
+            (By.CSS_SELECTOR, 'h1'),
+            (By.CSS_SELECTOR, 'span.B_NuCI'),
+            (By.CSS_SELECTOR, 'span.yhB1nd')
+        ]
         for s_type, s in name_selectors:
             elements = driver.find_elements(s_type, s)
-            if elements:
+            if elements and elements[0].text.strip():
                 product_name = elements[0].text.strip()
                 break
         
         # Price
-        price_selectors = [ (By.CSS_SELECTOR, '._30jeq3._16Jk6d'), (By.CSS_SELECTOR, '._30jeq3') ]
+        price_selectors = [ 
+            (By.CSS_SELECTOR, '._30jeq3._16Jk6d'), 
+            (By.CSS_SELECTOR, '._30jeq3'),
+            (By.CSS_SELECTOR, '.Nx9-bo'),
+            (By.XPATH, "//div[contains(@class, '_30jeq3')]")
+        ]
         for s_type, s in price_selectors:
             elements = driver.find_elements(s_type, s)
             if elements and elements[0].text.strip():

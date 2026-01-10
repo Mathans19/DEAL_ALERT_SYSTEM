@@ -54,7 +54,7 @@ def handle_message(message):
     if not url:
         return # Ignore messages without links
 
-    if "amazon" not in url.lower() and "flipkart" not in url.lower():
+    if "amazon" not in url.lower() and "flipkart" not in url.lower() and "amzn.in" not in url.lower():
         bot.reply_to(message, "Sorry, I only support Amazon and Flipkart links.")
         return
 
@@ -62,7 +62,7 @@ def handle_message(message):
     
     driver = setup_driver()
     try:
-        platform = "Amazon" if "amazon" in url.lower() else "Flipkart"
+        platform = "Amazon" if ("amazon" in url.lower() or "amzn.in" in url.lower()) else "Flipkart"
         
         if platform == "Amazon":
             name, raw_price = scrape_amazon(driver, url)
