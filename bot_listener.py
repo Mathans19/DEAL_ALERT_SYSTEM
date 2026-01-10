@@ -35,7 +35,7 @@ def extract_url(text):
     match = re.search(url_pattern, text)
     return match.group(0) if match else None
 
-@bot.message_handler(commands=['start', 'help'])
+@bot.message_handler(func=lambda message: message.text.strip().lower() in ['/start', 'start', '/help', 'help'])
 def send_welcome(message):
     help_text = (
         "Welcome to your Price Tracker Bot!\n\n"
@@ -49,12 +49,16 @@ def send_welcome(message):
 
 @bot.message_handler(func=lambda message: True)
 def handle_message(message):
-    url = extract_url(message.text)
+    text = message.text.strip()
+    url = extract_url(text)
     
     if not url:
-        return # Ignore messages without links
+        # Provide a helpful hint if the user sent text but no URL
+        if text.lower() not in ['/start', 'start', '/help', 'help']:
+            bot.reply_to(message, "I didn't find a link in your message. Please share a Flipkart or Amazon product link to start tracking!")
+        return
 
-    if "amazon" not in url.lower() and "flipkart" not in url.lower() and "amzn.in" not in url.lower():
+    if "amazon" not in url.lower() and "flipkart" not in url.lower() and "amzn.in" not in url.lower() and "dl.flipkart.com" not in url.lower():
         bot.reply_to(message, "Sorry, I only support Amazon and Flipkart links.")
         return
 

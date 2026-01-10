@@ -49,88 +49,151 @@ def setup_driver():
     )
     return driver
 
-def scrape_amazon(driver, url):
-    product_name, price = None, None
-    try:
-        driver.get(url)
-        # Wait for either the product title OR the common "Continue" button
-        WebDriverWait(driver, 20).until(
-            EC.presence_of_element_located((By.CSS_SELECTOR, "#productTitle, .a-button-text, body"))
-        )
-        
-        # Handle intermediate "Continue shopping" page if it exists
-        continue_buttons = driver.find_elements(By.XPATH, "//a[contains(text(), 'Continue')]")
-        if continue_buttons:
-            continue_buttons[0].click()
-            WebDriverWait(driver, 15).until(EC.presence_of_element_located((By.ID, "productTitle")))
+    attempts = 2
+    for attempt in range(attempts):
+        try:
+            driver.get(url)
+            # Wait for either the product title OR the common "Continue" button OR CAPTCHA
+            WebDriverWait(driver, 20).until(
+                EC.presence_of_element_located((By.CSS_SELECTOR, "#productTitle, .a-button-text, .a-price, body"))
+            )
+            
+            # Handle intermediate "Continue shopping" page if it exists
+            continue_buttons = driver.find_elements(By.XPATH, "//a[contains(text(), 'Continue')] | //button[contains(text(), 'Continue')]")
+            if continue_buttons:
+                continue_buttons[0].click()
+                WebDriverWait(driver, 15).until(EC.presence_of_element_located((By.ID, "productTitle")))
 
-        # Name
-        name_selectors = [ 
-            (By.ID, 'productTitle'), 
-            (By.CSS_SELECTOR, '.product-title-word-break'),
-            (By.CSS_SELECTOR, '#title')
-        ]
-        for s_type, s in name_selectors:
-            elements = driver.find_elements(s_type, s)
-            if elements and elements[0].text.strip():
-                product_name = elements[0].text.strip()
-                break
-        
-        # Price
-        price_selectors = [ 
-            (By.CSS_SELECTOR, '.a-price .a-offscreen'), 
-            (By.CSS_SELECTOR, '.a-price-whole'),
-            (By.ID, 'priceblock_ourprice'),
-            (By.ID, 'priceblock_dealprice')
-        ]
-        for s_type, s in price_selectors:
-            elements = driver.find_elements(s_type, s)
-            if elements:
-                price = elements[0].text.strip() or elements[0].get_attribute('innerHTML').strip()
-                if price: break
-        
-        if not price: # Fallback Regex
-            body_text = driver.find_element(By.TAG_NAME, 'body').text
-            matches = re.findall(r'₹\s?[\d,]+\.\d{2}|₹\s?[\d,]+', body_text)
-            if matches: price = matches[0]
+            # Name
+            name_selectors = [ 
+                (By.ID, 'productTitle'), 
+                (By.CSS_SELECTOR, '.product-title-word-break'),
+                (By.CSS_SELECTOR, '#title')
+            ]
+            for s_type, s in name_selectors:
+                elements = driver.find_elements(s_type, s)
+                if elements and elements[0].text.strip():
+                    product_name = elements[0].text.strip()
+                    break
+            
+            # Price
+            price_selectors = [ 
+                (By.CSS_SELECTOR, '.a-price .a-offscreen'), 
+                (By.CSS_SELECTOR, '.a-price-whole'),
+                (By.ID, 'priceblock_ourprice'),
+                (By.ID, 'priceblock_dealprice')
+            ]
+            found_prices = []
+            for s_type, s in price_selectors:
+                elements = driver.find_elements(s_type, s)
+                for el in elements:
+                    p_text = el.text.strip() or el.get_attribute('innerHTML').strip()
+                    if p_text: found_prices.append(p_text)
+            
+            if found_prices:
+                # Pick the lowest valid price
+                cleaned_prices = [p for p in [clean_price(tp) for tp in found_prices] if p is not None]
+                if cleaned_prices:
+                    price = f"₹{min(cleaned_prices)}" if not any('₹' in p for p in found_prices) else found_prices[0]
+            
+            if not price: # Fallback Regex
+                body_text = driver.find_element(By.TAG_NAME, 'body').text
+                matches = re.findall(r'₹\s?[\d,]+\.\d{2}|₹\s?[\d,]+', body_text)
+                if matches: price = matches[0]
 
-    except Exception as e:
-        print(f"Amazon Error: {e}")
+            # Fallback to driver.title if name not found
+            if not product_name:
+                title = driver.title
+                if title and "Robot Check" not in title and "Amazon.in" != title:
+                    if "|" in title:
+                        product_name = title.split("|")[0].strip()
+                    elif "-" in title:
+                        product_name = title.split("-")[0].strip()
+                    else:
+                        product_name = title
+
+            if product_name:
+                break # Success
+        except Exception as e:
+            if attempt == attempts - 1:
+                print(f"Amazon Error after {attempts} attempts: {e}")
+            time.sleep(2) # Wait a bit before retry
+
     return product_name, price
 
 def scrape_flipkart(driver, url):
     product_name, price = None, None
-    try:
-        driver.get(url)
-        WebDriverWait(driver, 20).until(EC.presence_of_element_located((By.TAG_NAME, "body")))
-        
-        # Name
-        name_selectors = [ 
-            (By.CSS_SELECTOR, '.B_NuCI'), 
-            (By.CSS_SELECTOR, 'h1'),
-            (By.CSS_SELECTOR, 'span.B_NuCI'),
-            (By.CSS_SELECTOR, 'span.yhB1nd')
-        ]
-        for s_type, s in name_selectors:
-            elements = driver.find_elements(s_type, s)
-            if elements and elements[0].text.strip():
-                product_name = elements[0].text.strip()
-                break
-        
-        # Price
-        price_selectors = [ 
-            (By.CSS_SELECTOR, '._30jeq3._16Jk6d'), 
-            (By.CSS_SELECTOR, '._30jeq3'),
-            (By.CSS_SELECTOR, '.Nx9-bo'),
-            (By.XPATH, "//div[contains(@class, '_30jeq3')]")
-        ]
-        for s_type, s in price_selectors:
-            elements = driver.find_elements(s_type, s)
-            if elements and elements[0].text.strip():
-                price = elements[0].text.strip()
-                break
-    except Exception as e:
-        print(f"Flipkart Error: {e}")
+    attempts = 2
+    for attempt in range(attempts):
+        try:
+            driver.get(url)
+            # Wait for any common Flipkart title or price element to confirm page load
+            WebDriverWait(driver, 20).until(
+                EC.presence_of_element_located((By.CSS_SELECTOR, "h1, .B_NuCI, .Nx9W0j, ._30jeq3, body"))
+            )
+            
+            # Name
+            name_selectors = [ 
+                (By.CSS_SELECTOR, 'h1.CEn5rD'), 
+                (By.CSS_SELECTOR, 'h1.VU-Z7G'),
+                (By.CSS_SELECTOR, '.B_NuCI'), 
+                (By.CSS_SELECTOR, 'h1'),
+                (By.CSS_SELECTOR, 'span.B_NuCI'),
+                (By.CSS_SELECTOR, 'span.yhB1nd'),
+                (By.CSS_SELECTOR, 'span.LMizgS')
+            ]
+            for s_type, s in name_selectors:
+                elements = driver.find_elements(s_type, s)
+                if elements and elements[0].text.strip():
+                    product_name = elements[0].text.strip()
+                    break
+            
+            # Fallback to driver.title if still None
+            if not product_name:
+                title = driver.title
+                if title:
+                    if "|" in title:
+                        product_name = title.split("|")[0].strip()
+                    elif "-" in title:
+                        product_name = title.split("-")[0].strip()
+                    else:
+                        product_name = title
+            
+            # Price
+            price_selectors = [ 
+                (By.CSS_SELECTOR, '._25b18c ._30jeq3'), # Standard
+                (By.CSS_SELECTOR, '.Nx9W0j'), # Discounted
+                (By.CSS_SELECTOR, '._30jeq3._16Jk6d'), 
+                (By.CSS_SELECTOR, '._30jeq3'),
+                (By.CSS_SELECTOR, '.hZ3P6w'),
+                (By.CSS_SELECTOR, '.Nx9-bo'),
+                (By.XPATH, "//div[contains(@class, '_30jeq3')]")
+            ]
+            found_prices = []
+            for s_type, s in price_selectors:
+                elements = driver.find_elements(s_type, s)
+                for el in elements:
+                    p_text = el.text.strip()
+                    if p_text: found_prices.append(p_text)
+            
+            if found_prices:
+                # Pick the lowest valid price
+                cleaned_prices = [p for p in [clean_price(tp) for tp in found_prices] if p is not None]
+                if cleaned_prices:
+                    # Sort to find the lowest price
+                    price = f"₹{min(cleaned_prices)}"
+            
+            if not price: # Fallback Regex for Flipkart
+                body_text = driver.find_element(By.TAG_NAME, 'body').text
+                matches = re.findall(r'₹\s?[\d,]+', body_text)
+                if matches: price = matches[0]
+            
+            if product_name:
+                break # Success
+        except Exception as e:
+            if attempt == attempts - 1:
+                print(f"Flipkart Error after {attempts} attempts: {e}")
+            time.sleep(2)
     return product_name, price
 
 def clean_price(price_str):
