@@ -6,14 +6,7 @@ import random
 import tempfile
 import django
 from decimal import Decimal
-from selenium import webdriver
-from selenium.webdriver.chrome.options import Options
-from selenium.webdriver.common.by import By
-from selenium.webdriver.support.ui import WebDriverWait
-from selenium.webdriver.support import expected_conditions as EC
 from datetime import datetime
-from fake_useragent import UserAgent
-from selenium_stealth import stealth
 
 # Configure Django (only if not already setup)
 if not os.getenv('DJANGO_SETTINGS_MODULE'):
@@ -33,6 +26,11 @@ if __name__ == "__main__":
         pass
 
 def setup_driver():
+    from selenium import webdriver
+    from selenium.webdriver.chrome.options import Options
+    from fake_useragent import UserAgent
+    from selenium_stealth import stealth
+    
     options = Options()
     options.add_argument("--headless")
     options.add_argument("--no-sandbox")
@@ -44,6 +42,7 @@ def setup_driver():
     user_agent = ua.random
     options.add_argument(f"user-agent={user_agent}")
     
+    # Use Selenium Manager which is built-in to modern Selenium
     driver = webdriver.Chrome(options=options)
     
     stealth(driver,
@@ -57,6 +56,10 @@ def setup_driver():
     return driver
 
 def scrape_amazon(driver, url):
+    from selenium.webdriver.common.by import By
+    from selenium.webdriver.support.ui import WebDriverWait
+    from selenium.webdriver.support import expected_conditions as EC
+    
     product_name, price = None, None
     attempts = 2
     for attempt in range(attempts):
@@ -138,6 +141,10 @@ def scrape_amazon(driver, url):
     return product_name, price
 
 def scrape_flipkart(driver, url):
+    from selenium.webdriver.common.by import By
+    from selenium.webdriver.support.ui import WebDriverWait
+    from selenium.webdriver.support import expected_conditions as EC
+
     product_name, price = None, None
     attempts = 2
     for attempt in range(attempts):
