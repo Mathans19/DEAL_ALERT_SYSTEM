@@ -20,4 +20,5 @@ from django.urls import path, include
 urlpatterns = [
     path('admin/', admin.site.urls),
     path('bot/', include('tracker.urls')),
+    path('', include('tracker.urls')), # This will handle the root / home page
 ]
