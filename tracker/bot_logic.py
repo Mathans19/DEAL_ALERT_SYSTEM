@@ -5,7 +5,7 @@ import requests
 from telebot import types
 
 token = os.getenv('TELEGRAM_BOT_TOKEN')
-bot = telebot.TeleBot(token)
+bot = telebot.TeleBot(token, threaded=False)
 
 def scrape_lite(url):
     """A fast scraper that doesn't need Chrome. Useful for Vercel/Serverless."""
