@@ -14,7 +14,10 @@ def scrape_lite(url):
             "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/119.0.0.0 Safari/537.36",
             "Accept-Language": "en-US,en;q=0.9",
         }
-        response = requests.get(url, headers=headers, timeout=10)
+        # Use allow_redirects=True (default) and a session for better redirect handling
+        session = requests.Session()
+        response = session.get(url, headers=headers, timeout=15)
+        
         if response.status_code == 200:
             # Simple regex to get title
             title_match = re.search(r'<title>(.*?)</title>', response.text, re.IGNORECASE)
@@ -22,8 +25,10 @@ def scrape_lite(url):
                 title = title_match.group(1).strip()
                 # Clean up Amazon/Flipkart specific title suffixes
                 title = title.replace("Amazon.in: Buy ", "").replace(" : Amazon.in", "")
+                title = title.replace(" - Buy Products Online at Best Price in India - Flipkart.com", "")
                 title = re.split(r' \| | - ', title)[0].strip()
-                return title
+                if title and len(title) > 3:
+                    return title
     except Exception as e:
         print(f"Lite scrape failed: {e}")
     return None
@@ -138,8 +143,15 @@ def handle_message(message):
             return
 
         # Fallback to Selenium (Only works locally/GitHub)
+        if os.getenv('VERCEL') or os.getenv('CI'):
+            # On Vercel, we can't run Chrome. Add with placeholder and let GH Actions fix it.
+            product.name = f"{platform} Product"
+            product.save()
+            bot.reply_to(message, f"✅ Added to Tracker!\n\nProduct: {product.name}\nPlatform: {platform}\n\n⚠️ *Note: I couldn't fetch the exact name right now. Our hourly scan (GitHub) will update the details automatically.*")
+            return
+
         from track_prices import setup_driver, scrape_amazon, scrape_flipkart, clean_price
-        bot.reply_to(message, f"Checking {platform} with browser... Please wait. (Note: This may fail in Vercel/Serverless)")
+        bot.reply_to(message, f"Checking {platform} with browser... Please wait.")
         
         driver = setup_driver()
         try:
