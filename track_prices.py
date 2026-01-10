@@ -49,6 +49,8 @@ def setup_driver():
     )
     return driver
 
+def scrape_amazon(driver, url):
+    product_name, price = None, None
     attempts = 2
     for attempt in range(attempts):
         try:
