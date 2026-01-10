@@ -80,17 +80,24 @@ def scrape_amazon(driver, url):
             
             # Price
             price_selectors = [ 
-                (By.CSS_SELECTOR, '.a-price .a-offscreen'), 
-                (By.CSS_SELECTOR, '.a-price-whole'),
-                (By.ID, 'priceblock_ourprice'),
-                (By.ID, 'priceblock_dealprice')
+                (By.CSS_SELECTOR, '#corePrice_feature_div .a-price .a-offscreen'), # Main Buy Box
+                (By.CSS_SELECTOR, 'div[data-brand-sourced-offer-display] .a-price .a-offscreen'), 
+                (By.CSS_SELECTOR, '.a-price.a-text-price:not(.a-size-small) .a-offscreen'),
+                (By.CSS_SELECTOR, '.a-price-whole')
             ]
             found_prices = []
             for s_type, s in price_selectors:
                 elements = driver.find_elements(s_type, s)
                 for el in elements:
                     p_text = el.text.strip() or el.get_attribute('innerHTML').strip()
-                    if p_text: found_prices.append(p_text)
+                    if p_text:
+                        # Safety check: Avoid "Unit Price" (often small font or secondary color)
+                        try:
+                            parent = el.find_element(By.XPATH, "./..")
+                            if "a-size-small" in parent.get_attribute("class") or "a-color-secondary" in parent.get_attribute("class"):
+                                continue # Skip unit prices
+                        except: pass
+                        found_prices.append(p_text)
             
             if found_prices:
                 # Pick the lowest valid price
