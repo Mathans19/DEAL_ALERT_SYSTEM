@@ -7,10 +7,14 @@ from .bot_logic import bot
 @csrf_exempt
 def telegram_webhook(request):
     if request.method == "POST":
-        json_str = request.body.decode('UTF-8')
-        update = telebot.types.Update.de_json(json_str)
-        bot.process_new_updates([update])
-        return HttpResponse("")
+        try:
+            json_str = request.body.decode('UTF-8')
+            update = telebot.types.Update.de_json(json_str)
+            bot.process_new_updates([update])
+            return HttpResponse("")
+        except Exception:
+            import traceback
+            return HttpResponse(traceback.format_exc(), status=500)
     else:
         return HttpResponse("This endpoint is for Telegram Webhooks.")
 
