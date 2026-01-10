@@ -81,9 +81,14 @@ WSGI_APPLICATION = 'price_tracking_project.wsgi.application'
 # Database
 # https://docs.djangoproject.com/en/4.2/ref/settings/#databases
 
+# Database configuration with fallback
+db_url = os.getenv('DATABASE_URL')
+if not db_url: # Handle None or empty string
+    db_url = 'sqlite:///' + os.path.join(BASE_DIR, 'db.sqlite3')
+
 DATABASES = {
-    'default': dj_database_url.config(
-        default=os.getenv('DATABASE_URL', 'sqlite:///' + os.path.join(BASE_DIR, 'db.sqlite3')),
+    'default': dj_database_url.parse(
+        db_url,
         conn_max_age=600,
         conn_health_checks=True,
     )
