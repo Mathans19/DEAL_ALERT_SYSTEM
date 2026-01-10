@@ -11,8 +11,9 @@ from selenium.webdriver.chrome.options import Options
 from selenium.webdriver.common.by import By
 from selenium.webdriver.support.ui import WebDriverWait
 from selenium.webdriver.support import expected_conditions as EC
-from django.utils import timezone
+from datetime import datetime
 from fake_useragent import UserAgent
+from selenium_stealth import stealth
 
 # Configure Django
 os.environ.setdefault('DJANGO_SETTINGS_MODULE', 'price_tracking_project.settings')
@@ -24,18 +25,27 @@ from tracker.models import TrackedProduct, ProductPrice
 sys.stdout = open(os.devnull, 'w')
 
 def setup_driver():
-    user_data_dir = tempfile.mkdtemp()
     options = Options()
     options.add_argument("--headless")
     options.add_argument("--no-sandbox")
     options.add_argument("--disable-dev-shm-usage")
-    options.add_argument(f"--user-data-dir={user_data_dir}")
+    options.add_experimental_option("excludeSwitches", ["enable-automation"])
+    options.add_experimental_option('useAutomationExtension', False)
     
-    # Randomize User-Agent for stealth
     ua = UserAgent()
-    options.add_argument(f"user-agent={ua.random}")
+    user_agent = ua.random
+    options.add_argument(f"user-agent={user_agent}")
     
     driver = webdriver.Chrome(options=options)
+    
+    stealth(driver,
+        languages=["en-US", "en"],
+        vendor="Google Inc.",
+        platform="Win32",
+        webgl_vendor="Intel Inc.",
+        renderer="Intel Iris OpenGL Engine",
+        fix_hairline=True,
+    )
     return driver
 
 def scrape_amazon(driver, url):
