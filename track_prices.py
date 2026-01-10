@@ -13,10 +13,7 @@ if not os.getenv('DJANGO_SETTINGS_MODULE'):
     os.environ.setdefault('DJANGO_SETTINGS_MODULE', 'price_tracking_project.settings')
 
 def init_django():
-    try:
-        django.setup()
-    except Exception:
-        pass
+    django.setup()
 
 # Only setup if running standalone
 if __name__ == "__main__":

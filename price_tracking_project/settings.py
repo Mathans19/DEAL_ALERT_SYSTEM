@@ -14,6 +14,7 @@ from pathlib import Path
 import os
 import dj_database_url
 from dotenv import load_dotenv
+from django.core.exceptions import ImproperlyConfigured
 
 load_dotenv()  # Load the variables from the .env file
 
@@ -81,35 +82,21 @@ WSGI_APPLICATION = 'price_tracking_project.wsgi.application'
 # Database
 # https://docs.djangoproject.com/en/4.2/ref/settings/#databases
 
-# Database configuration with robust fallback
-DATABASE_URL = os.getenv('DATABASE_URL')
-
-# If the env var is an empty string, treat it as None
-if DATABASE_URL and not DATABASE_URL.strip():
-    DATABASE_URL = None
-
+# Database configuration for Neon Cloud (Strict)
 DATABASES = {
     'default': dj_database_url.config(
-        default=DATABASE_URL or f'sqlite:///{os.path.join(BASE_DIR, "db.sqlite3")}',
+        default=os.getenv('DATABASE_URL'),
         conn_max_age=600,
         conn_health_checks=True,
     )
 }
 
-# Final safety check: if dj_database_url failed for any reason, use SQLite
-if not DATABASES['default']:
-    DATABASES['default'] = {
-        'ENGINE': 'django.db.backends.sqlite3',
-        'NAME': os.path.join(BASE_DIR, 'db.sqlite3'),
-    }
-
-# Safe debug print for GitHub/Vercel logs
-debug_url = os.getenv('DATABASE_URL', '')
-if debug_url:
-    masked_url = debug_url[:10] + "..." + debug_url[-5:] if len(debug_url) > 15 else "***"
-    print(f"DEBUG: DATABASE_URL is set (Length: {len(debug_url)}, Masked: {masked_url})")
-else:
-    print("DEBUG: DATABASE_URL is NOT set. Using SQLite fallback.")
+# Ensure the database is configured
+if not DATABASES['default'].get('ENGINE'):
+    raise ImproperlyConfigured(
+        "DATABASE_URL not found in environment. "
+        "Please ensure it is set in GitHub Secrets, Vercel, or .env"
+    )
 
 
 
