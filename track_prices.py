@@ -8,12 +8,14 @@ import django
 from decimal import Decimal
 from datetime import datetime
 
-# Configure Django (only if not already setup)
-if not os.getenv('DJANGO_SETTINGS_MODULE'):
-    os.environ.setdefault('DJANGO_SETTINGS_MODULE', 'price_tracking_project.settings')
-
 def init_django():
+    """Explicitly initialize Django settings and apps."""
+    if not os.getenv('DJANGO_SETTINGS_MODULE'):
+        os.environ.setdefault('DJANGO_SETTINGS_MODULE', 'price_tracking_project.settings')
     django.setup()
+
+# Call this at the TOP level so it's ready when imported or run
+init_django()
 
 # Only setup if running standalone
 if __name__ == "__main__":

@@ -82,21 +82,19 @@ WSGI_APPLICATION = 'price_tracking_project.wsgi.application'
 # Database
 # https://docs.djangoproject.com/en/4.2/ref/settings/#databases
 
-# Database configuration for Neon Cloud (Strict)
-DATABASES = {
-    'default': dj_database_url.config(
-        default=os.getenv('DATABASE_URL'),
-        conn_max_age=600,
-        conn_health_checks=True,
-    )
-}
+# Database configuration for Neon Cloud
+# We use dj_database_url to parse the DATABASE_URL environment variable
+db_from_env = dj_database_url.config(conn_max_age=600, conn_health_checks=True)
 
-# Ensure the database is configured
-if not DATABASES['default'].get('ENGINE'):
+if not db_from_env:
     raise ImproperlyConfigured(
         "DATABASE_URL not found in environment. "
-        "Please ensure it is set in GitHub Secrets, Vercel, or .env"
+        "Please ensure it is set in your Secrets (GitHub/Vercel) or .env file."
     )
+
+DATABASES = {
+    'default': db_from_env
+}
 
 
 
