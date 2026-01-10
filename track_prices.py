@@ -266,12 +266,18 @@ def run_scraper():
     driver = setup_driver()
     try:
         for product in products:
-            print(f"Scraping {product.name} on {product.platform}...")
+            print(f"Scraping details for: {product.name}...")
             
             if product.platform == "Amazon":
-                _, raw_price = scrape_amazon(driver, product.url)
+                new_name, raw_price = scrape_amazon(driver, product.url)
             else:
-                _, raw_price = scrape_flipkart(driver, product.url)
+                new_name, raw_price = scrape_flipkart(driver, product.url)
+            
+            # Sync Name (Fix placeholders from Vercel)
+            if new_name and (product.name == f"{product.platform} Product" or len(new_name) > len(product.name)):
+                print(f"Updating name: {product.name} -> {new_name}")
+                product.name = new_name
+                product.save()
             
             current_price = clean_price(raw_price)
             if current_price:
