@@ -8,13 +8,25 @@ from .bot_logic import bot
 def telegram_webhook(request):
     if request.method == "POST":
         try:
+            # Check for token
+            if not bot.token:
+                return HttpResponse("Bot token missing on server", status=500)
+
             json_str = request.body.decode('UTF-8')
+            if not json_str:
+                return HttpResponse("Empty body", status=400)
+
             update = telebot.types.Update.de_json(json_str)
+            if not update:
+                return HttpResponse("Invalid Update JSON", status=400)
+
             bot.process_new_updates([update])
-            return HttpResponse("")
-        except Exception:
+            return HttpResponse("OK", status=200)
+        except Exception as e:
             import traceback
-            return HttpResponse(traceback.format_exc(), status=500)
+            error_msg = f"Webhook Error: {str(e)}\n{traceback.format_exc()}"
+            print(error_msg) # This will show in Vercel logs
+            return HttpResponse(error_msg, status=500)
     else:
         return HttpResponse("This endpoint is for Telegram Webhooks.")
 
