@@ -1,12 +1,34 @@
 import os
 import re
 import telebot
+import requests
 from telebot import types
 from tracker.models import TrackedProduct, ProductPrice
 from track_prices import scrape_amazon, scrape_flipkart, setup_driver, clean_price
 
 token = os.getenv('TELEGRAM_BOT_TOKEN')
 bot = telebot.TeleBot(token)
+
+def scrape_lite(url):
+    """A fast scraper that doesn't need Chrome. Useful for Vercel/Serverless."""
+    try:
+        headers = {
+            "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/119.0.0.0 Safari/537.36",
+            "Accept-Language": "en-US,en;q=0.9",
+        }
+        response = requests.get(url, headers=headers, timeout=10)
+        if response.status_code == 200:
+            # Simple regex to get title
+            title_match = re.search(r'<title>(.*?)</title>', response.text, re.IGNORECASE)
+            if title_match:
+                title = title_match.group(1).strip()
+                # Clean up Amazon/Flipkart specific title suffixes
+                title = title.replace("Amazon.in: Buy ", "").replace(" : Amazon.in", "")
+                title = re.split(r' \| | - ', title)[0].strip()
+                return title
+    except Exception as e:
+        print(f"Lite scrape failed: {e}")
+    return None
 
 def extract_url(text):
     url_pattern = r'https?://[^\s]+'
@@ -96,7 +118,16 @@ def handle_message(message):
         platform = "Amazon" if ("amazon" in url.lower() or "amzn.in" in url.lower()) else "Flipkart"
         product.platform = platform
         
-        bot.reply_to(message, f"Checking {platform}... Please wait.")
+        # Try Lite Scrape first (Fast, works on Vercel)
+        lite_name = scrape_lite(url)
+        if lite_name:
+            product.name = lite_name
+            product.save()
+            bot.reply_to(message, f"Added to Tracker! (Lite Mode)\n\nProduct: {lite_name}\nPlatform: {platform}\n\n*Note: Price will be updated automatically in our next hourly scan (GitHub).*")
+            return
+
+        # Fallback to Selenium (Only works locally/GitHub)
+        bot.reply_to(message, f"Checking {platform} with browser... Please wait. (Note: This may fail in Vercel/Serverless)")
         
         driver = setup_driver()
         try:
