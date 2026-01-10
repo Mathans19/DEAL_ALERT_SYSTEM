@@ -3,8 +3,6 @@ import re
 import telebot
 import requests
 from telebot import types
-from tracker.models import TrackedProduct, ProductPrice
-from track_prices import scrape_amazon, scrape_flipkart, setup_driver, clean_price
 
 token = os.getenv('TELEGRAM_BOT_TOKEN')
 bot = telebot.TeleBot(token)
@@ -50,6 +48,7 @@ def send_welcome(message):
 @bot.message_handler(commands=['list'])
 @bot.message_handler(func=lambda message: message.text.strip().lower() == 'list')
 def list_products(message):
+    from tracker.models import TrackedProduct, ProductPrice
     products = TrackedProduct.objects.all()
     if not products:
         bot.reply_to(message, "You are not tracking any products yet.")
@@ -66,6 +65,7 @@ def list_products(message):
 @bot.message_handler(commands=['remove', 'delete'])
 @bot.message_handler(func=lambda message: message.text.strip().lower() in ['remove', 'delete'])
 def remove_product_list(message):
+    from tracker.models import TrackedProduct
     products = TrackedProduct.objects.all()
     if not products:
         bot.reply_to(message, "No products to remove.")
@@ -81,6 +81,7 @@ def remove_product_list(message):
 
 @bot.callback_query_handler(func=lambda call: call.data.startswith('del_'))
 def handle_delete_callback(call):
+    from tracker.models import TrackedProduct
     product_id = int(call.data.split('_')[1])
     try:
         product = TrackedProduct.objects.get(id=product_id)
@@ -108,6 +109,7 @@ def handle_message(message):
         bot.reply_to(message, "Sorry, I only support Amazon and Flipkart links.")
         return
 
+    from tracker.models import TrackedProduct, ProductPrice
     product, created = TrackedProduct.objects.get_or_create(url=url)
     
     if not created:
@@ -121,12 +123,15 @@ def handle_message(message):
         # Try Lite Scrape first (Fast, works on Vercel)
         lite_name = scrape_lite(url)
         if lite_name:
+            from tracker.models import ProductPrice
+            from track_prices import clean_price
             product.name = lite_name
             product.save()
             bot.reply_to(message, f"Added to Tracker! (Lite Mode)\n\nProduct: {lite_name}\nPlatform: {platform}\n\n*Note: Price will be updated automatically in our next hourly scan (GitHub).*")
             return
 
         # Fallback to Selenium (Only works locally/GitHub)
+        from track_prices import setup_driver, scrape_amazon, scrape_flipkart, clean_price
         bot.reply_to(message, f"Checking {platform} with browser... Please wait. (Note: This may fail in Vercel/Serverless)")
         
         driver = setup_driver()
