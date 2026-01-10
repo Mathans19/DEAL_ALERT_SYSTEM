@@ -219,16 +219,28 @@ def send_telegram_alert(product, current_price, last_price):
     if not token or not chat_id: return
 
     import requests
-    message = f"🚨 *Price Drop Alert!*\n\n"
-    message += f"📦 *{product.name}*\n"
-    message += f"💰 Current: ₹{current_price}\n"
+    # Use emoji for impact
+    message = f"🎁 *PRICE DROP DETECTED!*\n\n"
+    message += f"📦 *{product.name}*\n\n"
+    
     if last_price:
-        drop = ((last_price - current_price) / last_price) * 100
-        message += f"📉 Was: ₹{last_price} (-{drop:.1f}%)\n"
-    message += f"🔗 [View on {product.platform}]({product.url})"
+        savings = last_price - current_price
+        drop_percent = (savings / last_price) * 100
+        message += f"💰 *Current Price:* ₹{current_price}\n"
+        message += f"📉 *Was:* ₹{last_price}\n"
+        message += f"✨ *Savings:* ₹{savings} ({drop_percent:.1f}% OFF)\n\n"
+    else:
+        message += f"💰 *Initial Price:* ₹{current_price}\n\n"
+
+    message += f"🚀 [Buy Now on {product.platform}]({product.url})"
 
     url = f"https://api.telegram.org/bot{token}/sendMessage"
-    payload = {"chat_id": chat_id, "text": message, "parse_mode": "Markdown"}
+    payload = {
+        "chat_id": chat_id, 
+        "text": message, 
+        "parse_mode": "Markdown",
+        "disable_web_page_preview": False
+    }
     requests.post(url, json=payload)
 
 def run_scraper():
