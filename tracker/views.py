@@ -8,25 +8,30 @@ from .bot_logic import bot
 def telegram_webhook(request):
     if request.method == "POST":
         try:
-            # Check for token
-            if not bot.token or bot.token == 'None':
-                return HttpResponse(f"Bot token missing or invalid on server. (Current: {bot.token})", status=500)
-
+            # Print basic info for logs
+            print(f"DEBUG: Received webhook POST. Token present: {bool(bot.token)}")
+            
             json_str = request.body.decode('UTF-8')
             if not json_str:
-                return HttpResponse("Empty body", status=400)
+                return HttpResponse("DEBUG FAIL: Empty body", status=400)
+
+            # Manually parse JSON to check for common issues
+            try:
+                data = json.loads(json_str)
+            except Exception as je:
+                return HttpResponse(f"DEBUG FAIL: JSON Parse Error: {str(je)}", status=400)
+
+            print(f"DEBUG: Body parsed successfully. Update ID: {data.get('update_id')}")
 
             update = telebot.types.Update.de_json(json_str)
-            if not update:
-                return HttpResponse("Invalid Update JSON", status=400)
-
             bot.process_new_updates([update])
+            
             return HttpResponse("OK", status=200)
         except Exception as e:
             import traceback
-            error_msg = f"Webhook Error: {str(e)}\n{traceback.format_exc()}"
-            print(error_msg) # This will show in Vercel logs
-            return HttpResponse(error_msg, status=500)
+            error_trace = traceback.format_exc()
+            print(f"CRITICAL WEBHOOK ERROR: {str(e)}\n{error_trace}")
+            return HttpResponse(f"CRITICAL ERROR:\n{error_trace}", status=500)
     else:
         return HttpResponse("This endpoint is for Telegram Webhooks.")
 
