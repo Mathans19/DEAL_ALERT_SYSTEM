@@ -35,15 +35,22 @@ def extract_url(text):
 
 @bot.message_handler(func=lambda message: message.text.strip().lower() in ['/start', 'start', '/help', 'help'])
 def send_welcome(message):
+    print(f"DEBUG: Welcome command received from {message.chat.id}")
     help_text = (
         "Welcome to your Price Tracker Bot!\n\n"
         "Commands:\n"
         "/list - Show all tracked products\n"
         "/remove - Delete a product from tracking\n"
+        "/ping - Check if bot is alive\n"
         "/help - Show this help message\n\n"
         "To start tracking a new product, simply Paste/Share the link here directly from Flipkart or Amazon."
     )
     bot.reply_to(message, help_text, parse_mode='Markdown')
+
+@bot.message_handler(commands=['ping'])
+def send_ping(message):
+    print(f"DEBUG: Ping command received from {message.chat.id}")
+    bot.reply_to(message, "🏓 Pong! Bot is alive and connected to Vercel.")
 
 @bot.message_handler(commands=['list'])
 @bot.message_handler(func=lambda message: message.text.strip().lower() == 'list')
