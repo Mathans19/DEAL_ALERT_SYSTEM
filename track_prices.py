@@ -89,23 +89,32 @@ def scrape_amazon(driver, url):
             
             # Price
             price_selectors = [ 
-                # User provided specific structure for "True Price"
-                (By.CSS_SELECTOR, '.a-price.aok-align-center.reinventPricePriceToPayMargin.priceToPay .a-offscreen'),
-                (By.CSS_SELECTOR, '.a-price.aok-align-center.reinventPricePriceToPayMargin.priceToPay'),
+                # User specifically requested ONLY whole price to avoid 211.65 -> 21165 error
+                (By.CSS_SELECTOR, '.a-price.aok-align-center.reinventPricePriceToPayMargin.priceToPay .a-price-whole'),
+                (By.CSS_SELECTOR, '.priceToPay .a-price-whole'),
+                (By.CSS_SELECTOR, '.a-price .a-price-whole'),
                 
-                # General fallbacks
+                # Fallback to standard full price blocks if whole price not found
                 (By.CSS_SELECTOR, '#corePrice_feature_div .a-price .a-offscreen'), 
                 (By.CSS_SELECTOR, 'div[data-brand-sourced-offer-display] .a-price .a-offscreen'), 
                 (By.CSS_SELECTOR, '.a-price.a-text-price:not(.a-size-small) .a-offscreen'),
-                (By.CSS_SELECTOR, '.a-price-whole')
             ]
             found_prices = []
             for s_type, s in price_selectors:
                 elements = driver.find_elements(s_type, s)
                 for el in elements:
-                    # Clean handle for hidden text vs visible text
+                    # If we are targeting the whole price directly, we don't need innerHTML parsing
+                    if "a-price-whole" in s:
+                        p_text = el.text.strip()
+                        if p_text:
+                            # Remove any lingering decimals or dots just in case
+                            p_text = p_text.replace(".", "")
+                            found_prices.append(p_text)
+                            continue
+
+                    # Standard parsing for other selectors
                     p_text = el.get_attribute('innerHTML').strip()
-                    if not p_text or "class" in p_text: # If innerHTML is complex, try text
+                    if not p_text or "class" in p_text: 
                          p_text = el.text.strip()
                     
                     if not p_text: continue
@@ -121,7 +130,7 @@ def scrape_amazon(driver, url):
                     found_prices.append(p_text)
             
             if found_prices:
-                # Pick the first valid price (prioritizing the order in price_selectors)
+                # Pick the first valid price
                 cleaned_prices = []
                 for tp in found_prices:
                     cp = clean_price(tp)
@@ -133,7 +142,8 @@ def scrape_amazon(driver, url):
             
             if not price: # Fallback Regex
                 body_text = driver.find_element(By.TAG_NAME, 'body').text
-                matches = re.findall(r'₹\s?[\d,]+\.\d{2}|₹\s?[\d,]+', body_text)
+                # regex modified to prefer looking for comma separated integers without decimals first if possible
+                matches = re.findall(r'₹\s?[\d,]+', body_text)
                 if matches: price = matches[0]
 
             # Fallback to driver.title if name not found
