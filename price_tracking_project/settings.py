@@ -87,14 +87,17 @@ WSGI_APPLICATION = 'price_tracking_project.wsgi.application'
 # instead of any local system overrides.
 from dotenv import dotenv_values
 
-env_config = dotenv_values(BASE_DIR / '.env')
-neon_url = env_config.get("DATABASE_URL")
+if os.path.exists(BASE_DIR / '.env'):
+    env_config = dotenv_values(BASE_DIR / '.env')
+    neon_url = env_config.get("DATABASE_URL")
+else:
+    neon_url = None
 
 if neon_url:
-    # Use the one from the file
+    # Use the one from the file (Local Dev)
     db_config = dj_database_url.parse(neon_url, conn_max_age=600, conn_health_checks=True)
 else:
-    # Fallback to standard environment variable (e.g. for Vercel production)
+    # Fallback to standard environment variable (Vercel / GitHub Actions)
     db_config = dj_database_url.config(conn_max_age=600, conn_health_checks=True)
 
 if not db_config:
