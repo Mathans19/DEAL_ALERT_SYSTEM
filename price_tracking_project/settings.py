@@ -31,7 +31,11 @@ SECRET_KEY = 'django-insecure-^sv+c)&7m%4#djf&!q+=!!#oo+h6%@c#ke&(ynkgde&ywn6=hq
 # SECURITY WARNING: don't run with debug turned on in production!
 DEBUG = os.getenv('DEBUG', 'True') == 'True'
 
-ALLOWED_HOSTS = ['*'] # Or your specific vercel domain
+ALLOWED_HOSTS = ['*', '.vercel.app', 'deal-alert-system.vercel.app']
+
+CSRF_TRUSTED_ORIGINS = [
+    'https://deal-alert-system.vercel.app',
+]
 
 
 # Application definition

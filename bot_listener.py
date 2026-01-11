@@ -1,5 +1,16 @@
 import os
+import sys
 import django
+from dotenv import load_dotenv
+
+# Load env vars first
+load_dotenv()
+
+# Setup Django (needed for DB access in bot commands)
+os.environ.setdefault('DJANGO_SETTINGS_MODULE', 'price_tracking_project.settings')
+django.setup()
+
+# Now import the bot (which needs env vars)
 from tracker.bot_logic import bot
 
 if __name__ == "__main__":
@@ -9,3 +20,4 @@ if __name__ == "__main__":
         bot.infinity_polling()
     except Exception as e:
         print(f"Bot error: {e}")
+
