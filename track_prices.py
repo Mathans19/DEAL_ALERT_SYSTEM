@@ -89,8 +89,12 @@ def scrape_amazon(driver, url):
             
             # Price
             price_selectors = [ 
-                (By.CSS_SELECTOR, '.priceToPay'), # Most reliable current price
-                (By.CSS_SELECTOR, '#corePrice_feature_div .a-price .a-offscreen'), # Main Buy Box
+                # User provided specific structure for "True Price"
+                (By.CSS_SELECTOR, '.a-price.aok-align-center.reinventPricePriceToPayMargin.priceToPay .a-offscreen'),
+                (By.CSS_SELECTOR, '.a-price.aok-align-center.reinventPricePriceToPayMargin.priceToPay'),
+                
+                # General fallbacks
+                (By.CSS_SELECTOR, '#corePrice_feature_div .a-price .a-offscreen'), 
                 (By.CSS_SELECTOR, 'div[data-brand-sourced-offer-display] .a-price .a-offscreen'), 
                 (By.CSS_SELECTOR, '.a-price.a-text-price:not(.a-size-small) .a-offscreen'),
                 (By.CSS_SELECTOR, '.a-price-whole')
@@ -99,23 +103,22 @@ def scrape_amazon(driver, url):
             for s_type, s in price_selectors:
                 elements = driver.find_elements(s_type, s)
                 for el in elements:
-                    # Special handling for .priceToPay which might have multiple children
-                    if ".priceToPay" in s:
-                        p_text = el.text.strip()
-                        # If we get ₹211.65 from the whole text, that's perfect
-                        if p_text and "₹" in p_text:
-                            found_prices.append(p_text)
-                            continue
+                    # Clean handle for hidden text vs visible text
+                    p_text = el.get_attribute('innerHTML').strip()
+                    if not p_text or "class" in p_text: # If innerHTML is complex, try text
+                         p_text = el.text.strip()
                     
-                    p_text = el.text.strip() or el.get_attribute('innerHTML').strip()
-                    if p_text:
-                        # Safety check: Avoid "Unit Price" (often small font or secondary color)
-                        try:
-                            parent = el.find_element(By.XPATH, "./..")
-                            if "a-size-small" in parent.get_attribute("class") or "a-color-secondary" in parent.get_attribute("class"):
-                                continue # Skip unit prices
-                        except: pass
-                        found_prices.append(p_text)
+                    if not p_text: continue
+
+                    # Safety check: Avoid "Unit Price"
+                    try:
+                        parent = el.find_element(By.XPATH, "./..")
+                        p_class = parent.get_attribute("class")
+                        if "a-size-small" in p_class or "a-color-secondary" in p_class:
+                           continue
+                    except: pass
+                    
+                    found_prices.append(p_text)
             
             if found_prices:
                 # Pick the first valid price (prioritizing the order in price_selectors)
@@ -126,8 +129,6 @@ def scrape_amazon(driver, url):
                         cleaned_prices.append(cp)
                 
                 if cleaned_prices:
-                    # If we have matches from the first selector (.priceToPay), use that
-                    # Otherwise use the first valid price found
                     price = f"₹{cleaned_prices[0]}"
             
             if not price: # Fallback Regex
@@ -199,7 +200,10 @@ def scrape_flipkart(driver, url):
             
             # Price
             price_selectors = [ 
-                (By.CSS_SELECTOR, '.hZ3P6w'), # Priority selector provided by user
+                # User provided specific structure for Flipkart
+                (By.CSS_SELECTOR, 'div.hZ3P6w.bnqy13'), 
+                (By.CSS_SELECTOR, '.hZ3P6w'),
+                
                 (By.CSS_SELECTOR, '._25b18c ._30jeq3'), # Standard
                 (By.CSS_SELECTOR, '.Nx9W0j'), # Discounted
                 (By.CSS_SELECTOR, '._30jeq3._16Jk6d'), 
