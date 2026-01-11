@@ -2,6 +2,9 @@ import os
 import django
 from django.conf import settings
 
+from dotenv import load_dotenv
+load_dotenv(override=True)
+
 os.environ.setdefault('DJANGO_SETTINGS_MODULE', 'price_tracking_project.settings')
 django.setup()
 
