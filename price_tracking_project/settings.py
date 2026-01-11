@@ -16,7 +16,7 @@ import dj_database_url
 from dotenv import load_dotenv
 from django.core.exceptions import ImproperlyConfigured
 
-load_dotenv()  # Load the variables from the .env file
+load_dotenv(override=True)  # Load the variables from the .env file, overriding system ENV if present
 
 # Build paths inside the project like this: BASE_DIR / 'subdir'.
 BASE_DIR = Path(__file__).resolve().parent.parent
@@ -87,17 +87,31 @@ WSGI_APPLICATION = 'price_tracking_project.wsgi.application'
 # https://docs.djangoproject.com/en/4.2/ref/settings/#databases
 
 # Database configuration for Neon Cloud
-# We use dj_database_url to parse the DATABASE_URL environment variable
-db_from_env = dj_database_url.config(conn_max_age=600, conn_health_checks=True)
+# We verify if we have a .env file and prefer that variable to ensure we use Neon Cloud
+# instead of any local system overrides.
+from dotenv import dotenv_values
 
-if not db_from_env:
+if os.path.exists(BASE_DIR / '.env'):
+    env_config = dotenv_values(BASE_DIR / '.env')
+    neon_url = env_config.get("DATABASE_URL")
+else:
+    neon_url = None
+
+if neon_url:
+    # Use the one from the file (Local Dev)
+    db_config = dj_database_url.parse(neon_url, conn_max_age=600, conn_health_checks=True)
+else:
+    # Fallback to standard environment variable (Vercel / GitHub Actions)
+    db_config = dj_database_url.config(conn_max_age=600, conn_health_checks=True)
+
+if not db_config:
     raise ImproperlyConfigured(
         "DATABASE_URL not found in environment. "
         "Please ensure it is set in your Secrets (GitHub/Vercel) or .env file."
     )
 
 DATABASES = {
-    'default': db_from_env
+    'default': db_config
 }
 
 
