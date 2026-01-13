@@ -232,18 +232,14 @@ def scrape_flipkart(driver, url):
                 elements = driver.find_elements(s_type, s)
                 for el in elements:
                     p_text = el.text.strip()
-                    if p_text: found_prices.append(p_text)
-            
-            if found_prices:
-                # Pick the first valid price (prioritizing the order in price_selectors)
-                cleaned_prices = []
-                for tp in found_prices:
-                    cp = clean_price(tp)
-                    if cp is not None:
-                        cleaned_prices.append(cp)
-                
-                if cleaned_prices:
-                    price = f"₹{cleaned_prices[0]}"
+                    if p_text:
+                        # Try to clean it immediately
+                        cp = clean_price(p_text)
+                        if cp:
+                            price = f"₹{cp}"
+                            break # Break element loop
+                if price:
+                    break # Break selector loop (Prioritize top selectors)
             
             if not price: # Fallback Regex for Flipkart
                 body_text = driver.find_element(By.TAG_NAME, 'body').text
