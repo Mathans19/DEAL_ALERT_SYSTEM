@@ -36,5 +36,6 @@ jobs:
       - name: Aggregate Old Prices
         env:
           DATABASE_URL: ${{ secrets.DATABASE_URL }}
+          TELEGRAM_BOT_TOKEN: ${{ secrets.TELEGRAM_BOT_TOKEN }}
           PRICE_AGG_BATCH_SIZE: 250
         run: python manage.py aggregate_prices
