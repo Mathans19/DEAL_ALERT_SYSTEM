@@ -220,11 +220,10 @@ def scrape_flipkart(driver, url):
                 (By.CSS_SELECTOR, 'div.hZ3P6w.bnqy13'), 
                 (By.CSS_SELECTOR, '.hZ3P6w'),
                 
-                (By.CSS_SELECTOR, '._25b18c ._30jeq3'), # Standard
-                (By.CSS_SELECTOR, '.Nx9W0j'), # Discounted
+               
                 (By.CSS_SELECTOR, '._30jeq3._16Jk6d'), 
                 (By.CSS_SELECTOR, '._30jeq3'),
-                (By.CSS_SELECTOR, '.Nx9-bo'),
+            
                 (By.XPATH, "//div[contains(@class, '_30jeq3')]")
             ]
             found_prices = []
