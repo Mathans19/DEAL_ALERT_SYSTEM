@@ -315,8 +315,8 @@ def run_scraper():
             
             current_price = clean_price(raw_price)
             if current_price:
-                # Get last recorded price
-                last_entry = ProductPrice.objects.filter(product=product).order_by("-scraped_at").first()
+                # Get last recorded price (raw only)
+                last_entry = ProductPrice.objects.filter(product=product, is_summary=False).order_by("-scraped_at").first()
                 last_price = last_entry.price if last_entry else None
                 
                 # Save new price

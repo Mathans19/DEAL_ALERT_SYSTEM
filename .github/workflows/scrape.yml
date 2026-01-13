@@ -32,3 +32,9 @@ jobs:
           TELEGRAM_CHAT_ID: ${{ secrets.TELEGRAM_CHAT_ID }}
           CI: true
         run: python track_prices.py
+
+      - name: Aggregate Old Prices
+        env:
+          DATABASE_URL: ${{ secrets.DATABASE_URL }}
+          PRICE_AGG_BATCH_SIZE: 250
+        run: python manage.py aggregate_prices
