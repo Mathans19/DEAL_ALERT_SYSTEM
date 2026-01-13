@@ -41,6 +41,12 @@ def setup_driver():
     user_agent = ua.random
     options.add_argument(f"user-agent={user_agent}")
     
+    # Use TOR Proxy if running on GitHub Actions (CI)
+    if os.getenv('CI'):
+        # Socks5 proxy on localhost:9050 (default TOR port)
+        options.add_argument('--proxy-server=socks5://127.0.0.1:9050')
+        print("Using TOR Proxy: socks5://127.0.0.1:9050")
+    
     # Use Selenium Manager which is built-in to modern Selenium
     driver = webdriver.Chrome(options=options)
     

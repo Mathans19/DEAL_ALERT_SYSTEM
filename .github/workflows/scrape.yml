@@ -25,6 +25,16 @@ jobs:
       - name: Set up Chrome
         uses: browser-actions/setup-chrome@v1
 
+      - name: Install and Start TOR
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y tor
+          sudo service tor start
+          # Wait a few seconds for TOR to bootstrap
+          sleep 10
+          # Verify TOR is listening on port 9050
+          netstat -an | grep 9050 || echo "TOR not running?"
+
       - name: Run Scraper
         env:
           DATABASE_URL: ${{ secrets.DATABASE_URL }}
